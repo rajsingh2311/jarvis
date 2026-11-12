@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jarvis</title>
+<script src="api.js?v=202611130016"></script>
+<base target="_top">
+<meta charset="utf-8">
+<style>
+  :root { --bg:#0b1220; --panel:#111a2e; --panel2:#16213a; --line:#23314f; --text:#e6edf8; --muted:#94a3c0; --accent:#38bdf8; --good:#4ade80; --warn:#fbbf24; --bad:#f87171; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Segoe UI",Roboto,Arial,sans-serif; background:var(--bg); color:var(--text); font-size:14px; }
+  a { color:var(--accent); }
+  .shell { display:flex; min-height:100vh; }
+  nav.side { width:200px; flex:0 0 200px; background:var(--panel); border-right:1px solid var(--line); padding:16px 10px; position:sticky; top:0; height:100vh; }
+  nav.side h1 { font-size:16px; margin:4px 8px 18px; letter-spacing:.4px; }
+  nav.side h1 span { color:var(--accent); }
+  nav.side button { display:block; width:100%; text-align:left; background:none; border:none; color:var(--muted); padding:10px 12px; border-radius:10px; cursor:pointer; font-size:14px; margin-bottom:2px; }
+  nav.side button.on { background:var(--panel2); color:var(--text); font-weight:600; }
+  nav.side .badge { float:right; background:var(--accent); color:#04121f; border-radius:999px; padding:0 7px; font-size:12px; font-weight:700; }
+  main { flex:1; min-width:0; }
+  .top { position:sticky; top:0; z-index:5; background:var(--bg); border-bottom:1px solid var(--line); padding:12px 20px; display:flex; gap:10px; align-items:center; }
+  .top input { flex:1; }
+  .page { padding:20px; max-width:1100px; }
+  h2 { font-size:20px; margin:0 0 4px; }
+  .sub { color:var(--muted); margin:0 0 18px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:16px; }
+  .card h3 { margin:0 0 10px; font-size:15px; }
+  .stat { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+  .stat div { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 16px; min-width:120px; }
+  .stat b { display:block; font-size:22px; }
+  .stat span { color:var(--muted); font-size:12px; }
+  input, textarea, select { width:100%; background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:10px; padding:9px 11px; font:inherit; }
+  textarea { min-height:90px; resize:vertical; }
+  .btn { background:var(--accent); color:#04121f; border:none; border-radius:10px; padding:9px 14px; font-weight:600; cursor:pointer; white-space:nowrap; font:inherit; font-weight:600; }
+  .btn.ghost { background:none; color:var(--text); border:1px solid var(--line); font-weight:500; }
+  .btn.small { padding:5px 10px; font-size:12px; }
+  .btn:disabled { opacity:.5; cursor:wait; }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .row > input, .row > select { flex:1; min-width:140px; }
+  .item { border-top:1px solid var(--line); padding:10px 0; }
+  .item:first-child { border-top:none; }
+  .item .t { font-weight:600; }
+  .item .m { color:var(--muted); font-size:12px; margin-top:2px; }
+  .item .x { margin-top:6px; white-space:pre-wrap; line-height:1.45; }
+  .item .acts { margin-top:8px; display:flex; gap:6px; flex-wrap:wrap; }
+  .chip { display:inline-block; border:1px solid var(--line); border-radius:999px; padding:2px 9px; font-size:12px; color:var(--muted); margin:2px 4px 2px 0; cursor:pointer; background:none; }
+  .chip.on { background:var(--accent); color:#04121f; border-color:var(--accent); }
+  .acct { display:inline-block; border-radius:999px; padding:1px 8px; font-size:11px; font-weight:600; color:#04121f; }
+  .answer { background:var(--panel2); border:1px solid var(--accent); border-radius:12px; padding:14px; margin:14px 0; font-size:15px; line-height:1.5; }
+  mark { background:rgba(56,189,248,.28); color:inherit; border-radius:3px; padding:0 2px; }
+  .muted { color:var(--muted); }
+  .over { color:var(--bad); font-weight:600; }
+  .ok { color:var(--good); font-weight:600; }
+  .unread .t { color:#fff; }
+  .unread { border-left:3px solid var(--accent); padding-left:10px; }
+  .chat { display:flex; flex-direction:column; gap:10px; min-height:40vh; padding-bottom:12px; }
+  .bubble { padding:10px 14px; border-radius:14px; white-space:pre-wrap; line-height:1.45; max-width:85%; word-wrap:break-word; }
+  .bubble.me { background:#1e3a5f; align-self:flex-end; }
+  .bubble.jv { background:var(--panel2); border:1px solid var(--line); align-self:flex-start; }
+  .bubble.jv:before { content:"JARVIS"; display:block; font-size:10px; letter-spacing:2px; color:var(--accent); font-weight:700; margin-bottom:4px; }
+  .composer { display:flex; gap:8px; position:sticky; bottom:0; background:var(--bg); padding:10px 0; }
+  .composer textarea { min-height:44px; height:44px; }
+  .aimode { font-size:12px; padding:2px 10px; border-radius:999px; border:1px solid var(--line); }
+  .aimode.on { color:var(--good); border-color:var(--good); }
+  .cal { display:grid; grid-template-columns:repeat(7, 1fr); gap:4px; }
+  .cal .hd { text-align:center; color:var(--muted); font-size:12px; padding:4px 0; }
+  .cal .day { min-height:84px; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:6px; cursor:pointer; overflow:hidden; }
+  .cal .day.out { opacity:.35; }
+  .cal .day.today { border-color:var(--accent); }
+  .cal .day.sel { background:var(--panel2); box-shadow:inset 0 0 0 2px var(--accent); }
+  .cal .num { font-size:12px; font-weight:700; color:var(--muted); }
+  .cal .day.today .num { color:var(--accent); }
+  .cal .ev { font-size:11px; background:rgba(56,189,248,.18); border-radius:5px; padding:1px 5px; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cal .more { font-size:11px; color:var(--muted); margin-top:2px; }
+  .formgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .formgrid .full { grid-column:1 / -1; }
+  @media (max-width: 760px) { .cal .day { min-height:52px; padding:4px; } .cal .ev { display:none; } .cal .day.has .num:after { content:" •"; color:var(--accent); } .formgrid { grid-template-columns:1fr; } }
+  .toast { position:fixed; bottom:20px; right:20px; background:var(--panel2); border:1px solid var(--line); padding:12px 16px; border-radius:12px; display:none; z-index:20; max-width:360px; }
+  .hide { display:none; }
+  .bell { position:relative; }
+  .bell .badge { position:absolute; top:-6px; right:-6px; background:var(--bad); color:#fff; border-radius:999px; padding:0 6px; font-size:11px; font-weight:700; }
+  .pops { position:fixed; top:64px; right:16px; z-index:30; display:flex; flex-direction:column; gap:8px; max-width:340px; }
+  .pop { background:var(--panel2); border:1px solid var(--accent); border-radius:12px; padding:12px 14px; box-shadow:0 8px 24px rgba(0,0,0,.45); }
+  .pop.k-security { border-color:var(--bad); }
+  .pop.k-reminder { border-color:var(--warn); }
+  .pop b { display:block; margin-bottom:4px; }
+  .pop .acts { margin-top:8px; display:flex; gap:6px; }
+  @media (max-width: 760px) {
+    .pops { left:14px; right:14px; max-width:none; }
+    .shell { display:block; }
+    nav.side { position:fixed; bottom:0; top:auto; left:0; right:0; width:auto; height:auto; display:flex; overflow-x:auto; padding:6px; z-index:10; border-right:none; border-top:1px solid var(--line); }
+    nav.side h1 { display:none; }
+    nav.side button { width:auto; flex:0 0 auto; text-align:center; font-size:12px; padding:8px 10px; }
+    .page { padding:14px 14px 90px; }
+    .top { padding:10px 14px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="side" id="nav">
+    <h1>COMMAND<span>.</span></h1>
+    <button data-p="home" class="on">Home</button>
+    <button data-p="jarvis">Jarvis</button>
+    <button data-p="alerts">Alerts <span class="badge hide" id="b-alerts"></span></button>
+    <button data-p="calendar">Calendar</button>
+    <button data-p="ask">Ask</button>
+    <button data-p="memory">Memory</button>
+    <button data-p="inbox">Inbox <span class="badge hide" id="b-unread"></span></button>
+    <button data-p="tasks">Tasks <span class="badge hide" id="b-tasks"></span></button>
+    <button data-p="settings">Settings</button>
+  </nav>
+  <main>
+    <div class="top">
+      <input id="gsearch" placeholder="Search everything: notes, mail, tasks (Enter)">
+      <button class="btn ghost" id="gsearch-go">Search</button>
+      <button class="btn ghost bell" id="bell" title="Alerts">🔔<span class="badge hide" id="b-bell"></span></button>
+    </div>
+    <div class="page" id="page"></div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<div class="pops" id="pops"></div>
+
+<script>
+var state = { page: 'home', tag: '', inbox: { account: '', category: '', unread: false } };
+var CATS = ['Needs reply', 'Bills', 'OTP & security', 'Newsletters', 'Suspicious', 'Other'];
+
+function $(id) { return document.getElementById(id); }
+function el(tag, props, kids) {
+  var e = document.createElement(tag);
+  if (props) Object.keys(props).forEach(function (k) {
+    if (k === 'text') e.textContent = props[k];
+    else if (k === 'cls') e.className = props[k];
+    else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), props[k]);
+    else e.setAttribute(k, props[k]);
+  });
+  (kids || []).forEach(function (c) { if (c) e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+  return e;
+}
+function call(fn) {
+  var args = Array.prototype.slice.call(arguments, 1);
+  return new Promise(function (ok, fail) {
+    var r = google.script.run.withSuccessHandler(ok).withFailureHandler(function (e) { toast('Error: ' + (e && e.message ? e.message : e)); fail(e); });
+    r[fn].apply(r, args);
+  });
+}
+function toast(msg) {
+  var t = $('toast'); t.textContent = msg; t.style.display = 'block';
+  clearTimeout(toast.timer); toast.timer = setTimeout(function () { t.style.display = 'none'; }, 3500);
+}
+function page(title, sub) {
+  var p = $('page'); p.textContent = '';
+  p.appendChild(el('h2', { text: title }));
+  if (sub) p.appendChild(el('p', { cls: 'sub', text: sub }));
+  return p;
+}
+function loading(p) { p.appendChild(el('p', { cls: 'muted', text: 'Loading...' })); }
+function card(title, kids) { return el('div', { cls: 'card' }, [title ? el('h3', { text: title }) : null].concat(kids || [])); }
+function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function highlight(text, words) {
+  var frag = document.createDocumentFragment();
+  var roots = (words || []).filter(function (w) { return w && w.length >= 3 && w.charAt(0) !== '#'; })
+    .map(function (w) { return escRe(w.slice(0, Math.max(3, w.length - 1))); });
+  if (!roots.length) { frag.appendChild(document.createTextNode(text)); return frag; }
+  var re = new RegExp('(' + roots.join('|') + ')[a-z]*', 'gi');
+  var last = 0, m;
+  while ((m = re.exec(text))) {
+    if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+    frag.appendChild(el('mark', { text: m[0] }));
+    last = m.index + m[0].length;
+    if (m[0].length === 0) re.lastIndex++;
+  }
+  if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+  return frag;
+}
+function acctChip(addr, colours) {
+  var c = (colours && colours[addr]) || '#94a3c0';
+  var s = el('span', { cls: 'acct', text: addr.split('@')[0] });
+  s.style.background = c;
+  return s;
+}
+
+document.querySelectorAll('#nav button').forEach(function (b) {
+  b.addEventListener('click', function () { go(b.getAttribute('data-p')); });
+});
+function go(p) {
+  state.page = p;
+  document.querySelectorAll('#nav button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-p') === p); });
+  ({ home: showHome, jarvis: showJarvis, alerts: showAlerts, calendar: showCalendar, ask: showAsk, memory: showMemory, inbox: showInbox, tasks: showTasks, settings: showSettings })[p]();
+  window.scrollTo(0, 0);
+}
+
+function noteItem(n, words, onChange) {
+  var body = el('div', { cls: 'x' });
+  body.appendChild(highlight(n.snippet || n.text, words));
+  var meta = [n.type, n.created].concat(n.tags).filter(Boolean).join(' · ');
+  var facts = [];
+  if (n.dates.length) facts.push('Dates: ' + n.dates.join(', '));
+  if (n.amounts.length) facts.push('Amounts: ' + n.amounts.join(', '));
+  if (n.contacts.length) facts.push('Contacts: ' + n.contacts.join(', '));
+  var acts = el('div', { cls: 'acts' }, [
+    el('button', { cls: 'btn ghost small', text: n.pinned ? 'Unpin' : 'Pin', onclick: function () { call('pinNote', n.id, !n.pinned).then(onChange); } }),
+    el('button', { cls: 'btn ghost small', text: 'Edit', onclick: function () { editNote(n); } }),
+    el('button', { cls: 'btn ghost small', text: 'Delete', onclick: function () { if (confirm('Delete this note?')) call('deleteNote', n.id).then(onChange); } })
+  ]);
+  return el('div', { cls: 'item' }, [
+    el('div', { cls: 't', text: (n.pinned ? '★ ' : '') + (n.title || n.text.split('\n')[0].slice(0, 90)) }),
+    el('div', { cls: 'm', text: meta }), body,
+    facts.length ? el('div', { cls: 'm', text: facts.join('  |  ') }) : null, acts
+  ]);
+}
+
+function mailItem(m, colours, onChange) {
+  var acts = el('div', { cls: 'acts' }, [
+    el('button', { cls: 'btn small', text: 'Open in Gmail', onclick: function () { window.open(m.link, '_blank'); call('setMailRead', m.id, true); } }),
+    el('button', { cls: 'btn ghost small', text: m.read ? 'Mark unread' : 'Mark read', onclick: function () { call('setMailRead', m.id, !m.read).then(onChange); } }),
+    el('button', { cls: 'btn ghost small', text: 'Important', onclick: function () { call('markImportant', m.id, true).then(function () { toast('Learned: mail from this sender matters more.'); onChange(); }); } }),
+    el('button', { cls: 'btn ghost small', text: 'Not important', onclick: function () { call('markImportant', m.id, false).then(function () { toast('Learned: this sender matters less.'); onChange(); }); } }),
+    el('button', { cls: 'btn ghost small', text: 'Save to memory', onclick: function () { call('mailToMemory', m.id).then(function () { toast('Saved to memory.'); }); } }),
+    el('button', { cls: 'btn ghost small', text: 'Draft reply (AI)', onclick: function () {
+      var ins = prompt('What should the reply say? (optional)', '');
+      if (ins === null) return;
+      toast('Jarvis is drafting...');
+      call('draftReplyById', m.id, ins).then(function (d) { alert('Saved in Gmail > Drafts (not sent):\n\n' + d); });
+    } }),
+    el('button', { cls: 'btn ghost small', text: 'Make task', onclick: function () {
+      var d = prompt('Due date (YYYY-MM-DD), or leave empty:', '');
+      call('saveTask', { title: m.subject, due: d || '', source: 'Mail ' + m.id }).then(function () { toast('Task added.'); });
+    } })
+  ]);
+  return el('div', { cls: 'item' + (m.read ? '' : ' unread') }, [
+    el('div', { cls: 't', text: (m.flags ? '⚠ ' : '') + m.subject }),
+    el('div', { cls: 'm' }, [acctChip(m.account, colours), ' ' + m.from + ' · ' + m.date + ' · ' + m.category]),
+    m.flags ? el('div', { cls: 'm over', text: 'Security shield: ' + m.flags + '. Do not click links or share details.' }) : null,
+    el('div', { cls: 'x muted', text: m.summary }), acts
+  ]);
+}
+
+function taskItem(t, onChange) {
+  var acts = el('div', { cls: 'acts' });
+  if (t.status === 'Suggested') {
+    acts.appendChild(el('button', { cls: 'btn small', text: 'Accept', onclick: function () { call('setTaskStatus', t.id, 'Open').then(onChange); } }));
+    acts.appendChild(el('button', { cls: 'btn ghost small', text: 'Ignore', onclick: function () { call('deleteTask', t.id).then(onChange); } }));
+  } else if (t.status !== 'Done') {
+    acts.appendChild(el('button', { cls: 'btn small', text: 'Done', onclick: function () { call('setTaskStatus', t.id, 'Done').then(onChange); } }));
+    acts.appendChild(el('button', { cls: 'btn ghost small', text: 'Delete', onclick: function () { call('deleteTask', t.id).then(onChange); } }));
+  } else {
+    acts.appendChild(el('button', { cls: 'btn ghost small', text: 'Reopen', onclick: function () { call('setTaskStatus', t.id, 'Open').then(onChange); } }));
+  }
+  return el('div', { cls: 'item' }, [
+    el('div', { cls: 't', text: t.title }),
+    el('div', { cls: t.overdue ? 'm over' : 'm', text: (t.dueLabel ? (t.overdue ? 'Overdue · ' : 'Due ') + t.dueLabel : 'No due date') + ' · ' + t.source }),
+    acts
+  ]);
+}
+
+function showHome() {
+  var p = page('Home', '');
+  loading(p);
+  call('getHome').then(function (h) {
+    p = page(h.greeting + ', Ritesh', h.date);
+    setBadges(h.counts.unread, h.due.length);
+    p.appendChild(el('div', { cls: 'stat' }, [
+      el('div', {}, [el('b', { text: String(h.due.length) }), el('span', { text: 'tasks due' })]),
+      el('div', {}, [el('b', { text: String(h.counts.unread) }), el('span', { text: 'unread mails' })]),
+      el('div', {}, [el('b', { text: String(h.counts.notes) }), el('span', { text: 'things in memory' })]),
+      el('div', {}, [el('b', { text: String(h.suggested) }), el('span', { text: 'suggested tasks' })])
+    ]));
+    var quick = el('textarea', { placeholder: 'Quick note... e.g. Rahul bday 14 March #family' });
+    if (h.suspicious) p.appendChild(el('div', { cls: 'card', style: 'border-color:var(--bad)' }, [el('b', { cls: 'over', text: '⚠ ' + h.suspicious + ' suspicious mail(s) flagged by the security shield.' }), el('p', { cls: 'muted', text: 'Open Inbox > Suspicious. Do not click their links or share any details.' })]));
+    var gt = h.googleTasks.map(function (t) { return el('div', { cls: 'item' }, [el('div', { cls: 't', text: t.title }), el('div', { cls: 'm', text: 'Google Tasks · ' + t.list + (t.due ? ' · due ' + t.due : '') })]); });
+    var grid = el('div', { cls: 'grid' }, [
+      card('Today\'s calendar', h.calendar.length ? h.calendar.map(function (e) { return el('div', { cls: 'item' }, [el('div', { cls: 't', text: e.title }), el('div', { cls: 'm', text: e.time + (e.where ? ' · ' + e.where : '') })]); }) : [el('p', { cls: 'muted', text: 'No events today.' })]),
+      card('Due today and overdue', (h.due.length || gt.length) ? h.due.map(function (t) { return taskItem(t, showHome); }).concat(gt) : [el('p', { cls: 'muted', text: 'Nothing due. Nice.' })]),
+      h.news.length ? card('Headlines', h.news.map(function (n) { return el('div', { cls: 'item' }, [el('a', { href: n.link, target: '_blank', text: n.title }), el('div', { cls: 'm', text: n.topic + (n.source ? ' · ' + n.source : '') })]); })) : null,
+      card('Important unread mail', h.important.length ? h.important.map(function (m) { return mailItem(m, {}, showHome); }) : [el('p', { cls: 'muted', text: 'No important unread mail.' })]),
+      card('Saved for today\'s date', h.onThisDay.length ? h.onThisDay.map(function (n) { return noteItem(n, [], showHome); }) : [el('p', { cls: 'muted', text: 'No birthdays or dates saved for today.' })]),
+      card('Quick note', [quick, el('div', { cls: 'acts' }, [el('button', { cls: 'btn', text: 'Save', onclick: function () {
+        if (!quick.value.trim()) return;
+        call('saveNote', { text: quick.value }).then(function () { toast('Saved to memory.'); showHome(); });
+      } })])]),
+      card('Recently saved', h.recent.length ? h.recent.map(function (n) { return noteItem(n, [], showHome); }) : [el('p', { cls: 'muted', text: 'Nothing saved yet.' })])
+    ]);
+    p.appendChild(grid);
+  }).catch(function () { page('Home', 'Could not load. Did you run setup?'); });
+}
+
+function setBadges(unread, due) {
+  var bu = $('b-unread'), bt = $('b-tasks');
+  bu.textContent = unread; bu.classList.toggle('hide', !unread);
+  bt.textContent = due; bt.classList.toggle('hide', !due);
+}
+
+function showJarvis() {
+  var p = page('Jarvis', 'Your personal assistant. Tell it what to do: it saves, reminds, plans, checks mail and answers from your memory.');
+  var head = el('div', { cls: 'row', style: 'margin-bottom:10px' });
+  var mode = el('span', { cls: 'aimode', text: 'AI mode: checking...' });
+  head.appendChild(mode);
+  head.appendChild(el('button', { cls: 'btn ghost small', text: 'Clear chat', onclick: function () { if (confirm('Clear the conversation?')) call('clearChat').then(showJarvis); } }));
+  p.appendChild(head);
+  var chips = el('div', { style: 'margin-bottom:10px' });
+  ['Good morning', 'What\'s due?', 'Any important mail?', 'Check my mail', 'Remind me to ', 'Remember ', 'Help'].forEach(function (c) {
+    chips.appendChild(el('button', { cls: 'chip', text: c.trim(), onclick: function () {
+      if (/ $/.test(c)) { input.value = c; input.focus(); } else { send(c); }
+    } }));
+  });
+  p.appendChild(chips);
+  var log = el('div', { cls: 'chat' });
+  p.appendChild(log);
+  var input = el('textarea', { placeholder: 'Talk to Jarvis... (Enter to send, Shift+Enter for a new line)' });
+  var btn = el('button', { cls: 'btn', text: 'Send' });
+  p.appendChild(el('div', { cls: 'composer' }, [input, btn]));
+  function bubble(text, who, extra) {
+    var b = el('div', { cls: 'bubble ' + who, text: text });
+    if (extra && extra.length) b.appendChild(el('div', { cls: 'm', style: 'margin-top:6px', text: 'From memory: ' + extra.join(' | ') }));
+    log.appendChild(b);
+    window.scrollTo(0, document.body.scrollHeight);
+    return b;
+  }
+  function send(text) {
+    text = String(text || input.value).trim();
+    if (!text) return;
+    input.value = '';
+    bubble(text, 'me');
+    var wait = bubble('...', 'jv');
+    btn.disabled = true;
+    call('jarvis', text).then(function (r) {
+      wait.remove();
+      bubble(r.text, 'jv', r.results);
+      btn.disabled = false;
+      if (/task|done|remind/i.test(text)) call('getHome').then(function (h) { setBadges(h.counts.unread, h.due.length); });
+    }).catch(function () { wait.remove(); btn.disabled = false; });
+  }
+  btn.addEventListener('click', function () { send(); });
+  input.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+  call('getAISettings').then(function (s) {
+    mode.textContent = s.on && s.hasKey ? 'AI mode: ON (' + s.provider + ')' : 'AI mode: off (commands only, fully private)';
+    mode.classList.toggle('on', s.on && s.hasKey);
+  });
+  call('getChat').then(function (h) {
+    if (!h.length) bubble('Good to see you, Ritesh. Tell me what you need, for example "remind me to submit the audit report on Friday" or "good morning". Type "help" to see everything I can do.', 'jv');
+    h.forEach(function (m) { bubble(m.text, m.role === 'user' ? 'me' : 'jv'); });
+    input.focus();
+  });
+}
+
+function iso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+var MONTHS_L = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+function showCalendar() {
+  var now = new Date();
+  if (!state.calMonth) state.calMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  if (!state.calDay) state.calDay = iso(now);
+  var first = state.calMonth;
+  var p = page('Calendar', 'Your own calendar: saved in your dashboard, with reminders on the Alerts bell and Telegram (no email). Jarvis can add events too.');
+  var head = el('div', { cls: 'row', style: 'margin-bottom:10px' }, [
+    el('button', { cls: 'btn ghost small', text: '‹ Prev', onclick: function () { state.calMonth = new Date(first.getFullYear(), first.getMonth() - 1, 1); showCalendar(); } }),
+    el('b', { text: MONTHS_L[first.getMonth()] + ' ' + first.getFullYear(), style: 'font-size:16px;min-width:160px;text-align:center' }),
+    el('button', { cls: 'btn ghost small', text: 'Next ›', onclick: function () { state.calMonth = new Date(first.getFullYear(), first.getMonth() + 1, 1); showCalendar(); } }),
+    el('button', { cls: 'btn ghost small', text: 'Today', onclick: function () { state.calMonth = new Date(now.getFullYear(), now.getMonth(), 1); state.calDay = iso(now); showCalendar(); } }),
+    el('button', { cls: 'btn small', text: '+ New event', onclick: function () { fillForm(null, state.calDay); } })
+  ]);
+  p.appendChild(head);
+  var gridStart = new Date(first); gridStart.setDate(1 - ((first.getDay() + 6) % 7));
+  var gridEnd = new Date(gridStart); gridEnd.setDate(gridStart.getDate() + 42);
+  var grid = el('div', { cls: 'cal' });
+  ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(function (d) { grid.appendChild(el('div', { cls: 'hd', text: d })); });
+  p.appendChild(grid);
+  var dayBox = card('', []);
+  p.appendChild(dayBox);
+
+  var form = card('New event', []);
+  var f = {
+    id: el('input', { type: 'hidden' }), title: el('input', { placeholder: 'Title, e.g. Audit review with Durai sir' }),
+    date: el('input', { type: 'date' }), allDay: el('input', { type: 'checkbox' }),
+    start: el('input', { type: 'time', value: '10:00' }), end: el('input', { type: 'time', value: '11:00' }),
+    repeat: el('select', {}, [['none', 'Does not repeat'], ['daily', 'Every day'], ['weekly', 'Every week'], ['monthly', 'Every month'], ['yearly', 'Every year (birthdays)']].map(function (o) { return el('option', { value: o[0], text: o[1] }); })),
+    remind: el('select', {}, [[0, 'No reminder'], [5, '5 min before'], [15, '15 min before'], [30, '30 min before'], [60, '1 hour before'], [1440, '1 day before']].map(function (o) { return el('option', { value: String(o[0]), text: o[1] }); })),
+    location: el('input', { placeholder: 'Location (optional)' }), notes: el('textarea', { placeholder: 'Notes (optional)' })
+  };
+  f.allDay.style.width = 'auto';
+  f.allDay.addEventListener('change', function () { f.start.disabled = f.end.disabled = f.allDay.checked; });
+  var delBtn = el('button', { cls: 'btn ghost', text: 'Delete', onclick: function () {
+    if (f.id.value && confirm('Delete this event' + (f.repeat.value !== 'none' ? ' and all its repeats' : '') + '?')) call('deleteEvent', f.id.value).then(function () { toast('Deleted.'); showCalendar(); });
+  } });
+  form.appendChild(el('div', { cls: 'formgrid' }, [
+    f.id, el('div', { cls: 'full' }, [f.title]), f.date, el('label', { cls: 'row' }, [f.allDay, ' All day']),
+    el('div', {}, [el('div', { cls: 'm', text: 'Start' }), f.start]), el('div', {}, [el('div', { cls: 'm', text: 'End' }), f.end]),
+    f.repeat, f.remind, el('div', { cls: 'full' }, [f.location]), el('div', { cls: 'full' }, [f.notes])
+  ]));
+  form.appendChild(el('div', { cls: 'acts' }, [
+    el('button', { cls: 'btn', text: 'Save event', onclick: function () {
+      call('saveEvent', { id: f.id.value, title: f.title.value, date: f.date.value, allDay: f.allDay.checked, start: f.allDay.checked ? '' : f.start.value,
+        end: f.allDay.checked ? '' : f.end.value, repeat: f.repeat.value, remind: Number(f.remind.value), location: f.location.value, notes: f.notes.value })
+        .then(function () { toast('Saved to your calendar.'); state.calDay = f.date.value; showCalendar(); });
+    } }), delBtn
+  ]));
+  p.appendChild(form);
+
+  function fillForm(e, day) {
+    form.querySelector('h3').textContent = e ? 'Edit event' : 'New event';
+    f.id.value = e ? e.id : ''; f.title.value = e ? e.title : ''; f.date.value = e ? e.date : day;
+    f.allDay.checked = e ? e.allDay : false; f.start.value = e && e.start ? e.start : '10:00'; f.end.value = e && e.end ? e.end : '11:00';
+    f.start.disabled = f.end.disabled = f.allDay.checked;
+    f.repeat.value = e ? e.repeat : 'none'; f.remind.value = String(e ? e.remind : 15);
+    f.location.value = e ? e.location : ''; f.notes.value = e ? e.notes : '';
+    delBtn.style.display = e ? '' : 'none';
+    form.scrollIntoView({ behavior: 'smooth' }); f.title.focus();
+  }
+  fillForm(null, state.calDay);
+  window.scrollTo(0, 0);
+
+  call('listEvents', iso(gridStart), iso(gridEnd)).then(function (evs) {
+    var byDay = {};
+    evs.forEach(function (e) { (byDay[e.date] = byDay[e.date] || []).push(e); });
+    function drawDay(day) {
+      state.calDay = day;
+      grid.querySelectorAll('.day').forEach(function (c) { c.classList.toggle('sel', c.getAttribute('data-d') === day); });
+      dayBox.textContent = '';
+      var list = byDay[day] || [];
+      var d = new Date(day + 'T12:00:00');
+      dayBox.appendChild(el('h3', { text: d.toDateString() + ' · ' + list.length + ' event(s)' }));
+      if (!list.length) dayBox.appendChild(el('p', { cls: 'muted', text: 'Nothing planned. Click "+ New event" or tell Jarvis "add meeting ... at 3pm".' }));
+      list.forEach(function (e) {
+        dayBox.appendChild(el('div', { cls: 'item' }, [
+          el('div', { cls: 't', text: e.title }),
+          el('div', { cls: 'm', text: e.time + (e.location ? ' · ' + e.location : '') + (e.repeat !== 'none' ? ' · repeats ' + e.repeat : '') + (e.remind ? ' · reminder ' + e.remind + ' min before' : '') }),
+          e.notes ? el('div', { cls: 'x muted', text: e.notes }) : null,
+          el('div', { cls: 'acts' }, [el('button', { cls: 'btn ghost small', text: 'Edit', onclick: function () { fillForm(e); } })])
+        ]));
+      });
+      if (!f.id.value) f.date.value = day;
+    }
+    for (var d = new Date(gridStart); d < gridEnd; d.setDate(d.getDate() + 1)) {
+      var key = iso(d), list = byDay[key] || [];
+      var cell = el('div', { cls: 'day' + (d.getMonth() !== first.getMonth() ? ' out' : '') + (key === iso(now) ? ' today' : '') + (list.length ? ' has' : ''), 'data-d': key }, [el('div', { cls: 'num', text: String(d.getDate()) })]);
+      list.slice(0, 3).forEach(function (e) { cell.appendChild(el('div', { cls: 'ev', text: (e.allDay ? '' : e.start + ' ') + e.title })); });
+      if (list.length > 3) cell.appendChild(el('div', { cls: 'more', text: '+' + (list.length - 3) + ' more' }));
+      (function (k) { cell.addEventListener('click', function () { drawDay(k); }); })(key);
+      grid.appendChild(cell);
+    }
+    drawDay(state.calDay);
+  });
+}
+
+function showAsk() {
+  var p = page('Ask my memory', 'Self-made AI: answers come only from what you saved. Try: when is Rahul\'s birthday, how much fees did I pay in November, show everything from last week.');
+  var q = el('input', { placeholder: 'Ask a question...' });
+  var out = el('div');
+  var run = function () {
+    if (!q.value.trim()) return;
+    out.textContent = 'Thinking...';
+    call('ask', q.value).then(function (r) {
+      out.textContent = '';
+      out.appendChild(el('div', { cls: 'answer', text: r.answer }));
+      var how = 'Understood as: ' + r.intent + (r.timeFilter ? ' · time: ' + r.timeFilter : '') + (r.terms.length ? ' · words: ' + r.terms.join(', ') : '');
+      if (r.fixes.length) how += ' · spelling fixed: ' + r.fixes.join(', ');
+      out.appendChild(el('p', { cls: 'muted', text: how }));
+      r.results.forEach(function (n) {
+        var item = noteItem(n, r.highlight, showAsk);
+        item.querySelector('.acts').appendChild(el('button', { cls: 'btn ghost small', text: '✓ Right answer', onclick: function () { call('recordFeedback', q.value, n.id, true).then(function () { toast('Thanks, I will rank this higher.'); }); } }));
+        item.querySelector('.acts').appendChild(el('button', { cls: 'btn ghost small', text: '✗ Wrong', onclick: function () { call('recordFeedback', q.value, n.id, false).then(function () { toast('Got it, I will rank this lower.'); }); } }));
+        out.appendChild(item);
+      });
+    }).catch(function () { out.textContent = ''; });
+  };
+  q.addEventListener('keydown', function (e) { if (e.key === 'Enter') run(); });
+  p.appendChild(card('', [el('div', { cls: 'row' }, [q, el('button', { cls: 'btn', text: 'Ask', onclick: run })]), out]));
+  q.focus();
+}
+
+function editNote(n) {
+  go('memory');
+  setTimeout(function () {
+    $('n-id').value = n ? n.id : '';
+    $('n-title').value = n ? n.title : '';
+    $('n-text').value = n ? n.text : '';
+    $('n-tags').value = n ? n.tags.join(' ') : '';
+    $('n-save').textContent = n ? 'Update note' : 'Save note';
+    $('n-text').focus();
+  }, 50);
+}
+
+function showMemory() {
+  var p = page('Memory', 'Save anything. Dates, amounts, phone numbers and emails are found automatically. Never save real passwords.');
+  var form = card('Add to memory', [
+    el('input', { id: 'n-id', type: 'hidden' }),
+    el('input', { id: 'n-title', placeholder: 'Title (optional)' }), el('div', { style: 'height:8px' }),
+    el('textarea', { id: 'n-text', placeholder: 'What do you want to remember?' }), el('div', { style: 'height:8px' }),
+    el('input', { id: 'n-tags', placeholder: 'Tags, e.g. #jaipuria #family (optional)' }),
+    el('div', { cls: 'acts' }, [
+      el('button', { cls: 'btn', id: 'n-save', text: 'Save note', onclick: function () {
+        call('saveNote', { id: $('n-id').value, title: $('n-title').value, text: $('n-text').value, tags: $('n-tags').value })
+          .then(function () { toast('Saved.'); showMemory(); });
+      } }),
+      el('button', { cls: 'btn ghost', text: 'Clear', onclick: function () { editNote(null); } })
+    ])
+  ]);
+  p.appendChild(form);
+  var tags = el('div');
+  var list = card('All notes', [el('p', { cls: 'muted', text: 'Loading...' })]);
+  var learned = card('What Jarvis has learned about you', [el('p', { cls: 'muted', text: 'Loading...' })]);
+  p.appendChild(learned);
+  var drawFacts = function (fs) {
+    learned.textContent = '';
+    learned.appendChild(el('h3', { text: 'What Jarvis has learned about you (' + fs.length + ')' }));
+    learned.appendChild(el('p', { cls: 'muted', text: 'Picked up from what you tell Jarvis. Trusted = you said "remember about me". Quarantined = the security shield flagged it, so it is never used.' }));
+    if (!fs.length) learned.appendChild(el('p', { cls: 'muted', text: 'Nothing yet. Tell Jarvis things like "I work at Jaipuria Group".' }));
+    fs.forEach(function (f) {
+      var label = f.trust === 'trusted' ? 'trusted' : f.trust === 'untrusted' ? 'quarantined' : 'learned';
+      var acts = el('div', { cls: 'acts' });
+      if (f.trust !== 'trusted') acts.appendChild(el('button', { cls: 'btn ghost small', text: 'Trust', onclick: function () { call('trustFact', f.id).then(drawFacts); } }));
+      acts.appendChild(el('button', { cls: 'btn ghost small', text: 'Forget', onclick: function () { call('forgetFact', f.id).then(drawFacts); } }));
+      learned.appendChild(el('div', { cls: 'item' }, [el('div', { cls: f.trust === 'untrusted' ? 't over' : 't', text: f.fact }), el('div', { cls: 'm', text: label + ' · ' + f.source + ' · ' + f.time }), acts]));
+    });
+  };
+  call('listFacts').then(drawFacts);
+  p.appendChild(card('Filter by tag', [tags]));
+  p.appendChild(list);
+  call('listTags').then(function (ts) {
+    tags.appendChild(el('button', { cls: 'chip' + (state.tag ? '' : ' on'), text: 'All', onclick: function () { state.tag = ''; showMemory(); } }));
+    ts.forEach(function (t) {
+      tags.appendChild(el('button', { cls: 'chip' + (state.tag === t.tag ? ' on' : ''), text: t.tag + ' (' + t.count + ')', onclick: function () { state.tag = t.tag; showMemory(); } }));
+    });
+  });
+  call('listNotes', { tag: state.tag }).then(function (ns) {
+    list.textContent = '';
+    list.appendChild(el('h3', { text: (state.tag || 'All notes') + ' · ' + ns.length }));
+    if (!ns.length) list.appendChild(el('p', { cls: 'muted', text: 'Nothing here yet.' }));
+    ns.forEach(function (n) { list.appendChild(noteItem(n, [], showMemory)); });
+  });
+}
+
+function showInbox() {
+  var p = page('Inbox', 'All your accounts in one place. New mail arrives every 15 minutes. The full email stays in Gmail.');
+  loading(p);
+  call('listMail', state.inbox).then(function (r) {
+    p = page('Inbox', 'All your accounts in one place. New mail arrives every 15 minutes. The full email stays in Gmail.');
+    var acct = el('select', {}, [el('option', { value: '', text: 'All accounts' })].concat(r.accounts.map(function (a) { return el('option', { value: a, text: a }); })));
+    acct.value = state.inbox.account;
+    acct.addEventListener('change', function () { state.inbox.account = acct.value; showInbox(); });
+    var unread = el('input', { type: 'checkbox' }); unread.checked = state.inbox.unread; unread.style.width = 'auto';
+    unread.addEventListener('change', function () { state.inbox.unread = unread.checked; showInbox(); });
+    var syncBtn = el('button', { cls: 'btn ghost', text: 'Check now', onclick: function () {
+      syncBtn.disabled = true; syncBtn.textContent = 'Checking...';
+      call('syncMailNow').then(function (n) { toast(n + ' new mail(s).'); showInbox(); });
+    } });
+    p.appendChild(el('div', { cls: 'row' }, [acct, el('label', { cls: 'row muted' }, [unread, ' Unread only']), syncBtn]));
+    var cats = el('div', { style: 'margin:12px 0' });
+    cats.appendChild(el('button', { cls: 'chip' + (state.inbox.category ? '' : ' on'), text: 'All', onclick: function () { state.inbox.category = ''; showInbox(); } }));
+    r.categories.forEach(function (c) {
+      cats.appendChild(el('button', { cls: 'chip' + (state.inbox.category === c ? ' on' : ''), text: c + (r.counts[c] ? ' (' + r.counts[c] + ')' : ''), onclick: function () { state.inbox.category = c; showInbox(); } }));
+    });
+    p.appendChild(cats);
+    var list = card('', r.mail.length ? r.mail.map(function (m) { return mailItem(m, r.colours, showInbox); }) : [el('p', { cls: 'muted', text: 'No mail here. Click "Check now", or set up your accounts in Settings.' })]);
+    p.appendChild(list);
+  });
+}
+
+function showTasks() {
+  var p = page('Tasks', 'Your to-dos. Suggested tasks are found in your mail (a date plus words like due or deadline).');
+  var title = el('input', { placeholder: 'New task...' });
+  var due = el('input', { type: 'date' }); due.style.maxWidth = '180px';
+  var add = function () {
+    if (!title.value.trim()) return;
+    call('saveTask', { title: title.value, due: due.value }).then(function () { showTasks(); });
+  };
+  title.addEventListener('keydown', function (e) { if (e.key === 'Enter') add(); });
+  p.appendChild(card('Add a task', [el('div', { cls: 'row' }, [title, due, el('button', { cls: 'btn', text: 'Add', onclick: add })])]));
+  var box = el('div'); p.appendChild(box);
+  call('listTasks').then(function (ts) {
+    var groups = { Suggested: [], Open: [], Done: [] };
+    ts.forEach(function (t) { (groups[t.status] || groups.Open).push(t); });
+    var open = groups.Open.filter(function (t) { return true; });
+    setBadges(Number($('b-unread').textContent) || 0, open.filter(function (t) { return t.overdue || t.due === new Date().toISOString().slice(0, 10); }).length);
+    if (groups.Suggested.length) box.appendChild(card('Suggested from mail (' + groups.Suggested.length + ')', groups.Suggested.map(function (t) { return taskItem(t, showTasks); })));
+    box.appendChild(card('Open (' + open.length + ')', open.length ? open.map(function (t) { return taskItem(t, showTasks); }) : [el('p', { cls: 'muted', text: 'No open tasks.' })]));
+    if (groups.Done.length) box.appendChild(card('Done (' + groups.Done.length + ')', groups.Done.slice(0, 30).map(function (t) { return taskItem(t, showTasks); })));
+  });
+}
+
+function showSettings() {
+  var p = page('Settings', '');
+  loading(p);
+  call('getSettings').then(function (s) {
+    p = page('Settings', 'Signed in as ' + s.email + '. Only you can open this dashboard.');
+    var addr = el('input', { placeholder: 'other@email.com' });
+    var label = el('input', { placeholder: 'Gmail label, e.g. Accounts/work' });
+    var colour = el('input', { type: 'color', value: '#38bdf8' }); colour.style.maxWidth = '60px'; colour.style.padding = '2px';
+    var accList = el('div');
+    s.accounts.forEach(function (a) {
+      accList.appendChild(el('div', { cls: 'item row' }, [acctChip(a.address, { [a.address]: a.colour }), el('span', { text: ' ' + a.address + '  →  label: ' + a.label }),
+        el('button', { cls: 'btn ghost small', text: 'Remove', onclick: function () { call('removeAccount', a.address).then(showSettings); } })]));
+    });
+    p.appendChild(card('Email accounts', [
+      el('p', { cls: 'muted', text: 'For each extra account: 1) in that account, turn on auto-forwarding to ' + s.email + ', keeping a copy. 2) In this Gmail, make a filter: To = that address, Apply label = the label below. 3) Add it here.' }),
+      accList, el('div', { cls: 'row', style: 'margin-top:8px' }, [addr, label, colour,
+        el('button', { cls: 'btn', text: 'Add', onclick: function () { call('addAccount', addr.value, label.value, colour.value).then(showSettings); } })])
+    ]));
+
+    var w1 = el('input', { placeholder: 'word, e.g. kharcha' }), w2 = el('input', { placeholder: 'means, e.g. amount' });
+    var syn = el('div');
+    s.synonyms.forEach(function (x) { syn.appendChild(el('button', { cls: 'chip', text: x.word + ' = ' + x.means + '  ×', onclick: function () { call('removeSynonym', x.word).then(showSettings); } })); });
+    p.appendChild(card('Synonyms (teach the brain your words)', [syn, el('div', { cls: 'row', style: 'margin-top:8px' }, [w1, w2,
+      el('button', { cls: 'btn', text: 'Add', onclick: function () { call('addSynonym', w1.value, w2.value).then(showSettings); } })])]));
+
+    var rt = el('select', {}, [el('option', { value: 'sender', text: 'Sender contains' }), el('option', { value: 'subject', text: 'Subject contains' })]);
+    var rv = el('input', { placeholder: 'e.g. hdfcbank or fee receipt' });
+    var rc = el('select', {}, CATS.map(function (c) { return el('option', { value: c, text: c }); }));
+    var rl = el('div');
+    s.rules.forEach(function (r) { rl.appendChild(el('button', { cls: 'chip', text: r.type + ': ' + r.value + ' → ' + r.category + '  ×', onclick: function () { call('removeRule', r.type, r.value).then(showSettings); } })); });
+    p.appendChild(card('Mail sorting rules', [rl, el('div', { cls: 'row', style: 'margin-top:8px' }, [rt, rv, rc,
+      el('button', { cls: 'btn', text: 'Add', onclick: function () { call('addRule', rt.value, rv.value, rc.value).then(showSettings); } })])]));
+
+    var aiCard = card('Jarvis AI (optional)', [el('p', { cls: 'muted', text: 'Loading...' })]);
+    p.appendChild(aiCard);
+    call('getAISettings').then(function (a) {
+      aiCard.textContent = '';
+      aiCard.appendChild(el('h3', { text: 'Jarvis AI (optional)' }));
+      aiCard.appendChild(el('p', { cls: 'muted', text: 'Off = Jarvis uses only commands and the self-made brain; nothing leaves your Google account. On = anything that is not a command, and reply drafting, goes to the AI provider below with your relevant notes and tasks.' }));
+      var aon = el('input', { type: 'checkbox' }); aon.checked = a.on; aon.style.width = 'auto';
+      var prov = el('select', {}, [el('option', { value: 'gemini', text: 'Gemini (Google AI Studio, free tier)' }), el('option', { value: 'anthropic', text: 'Claude (Anthropic, key starts sk-ant-)' }), el('option', { value: 'openai_compat', text: 'Other OpenAI-compatible (Groq, OpenRouter...)' })]);
+      prov.value = a.provider;
+      var model = el('input', { placeholder: 'model name', value: a.model, list: 'ai-models' });
+      var dl = el('datalist', { id: 'ai-models' });
+      var base = el('input', { placeholder: 'Base URL (only for "Other"), e.g. ending in /v1', value: a.baseUrl });
+      var key = el('input', { type: 'password', autocomplete: 'off', placeholder: a.hasKey ? 'A key is saved (hidden). Paste a new one to replace it.' : 'Paste your API key here (never in a chat)' });
+      var status = el('div', { cls: 'm' });
+      var pick = el('div');
+      var save = function () {
+        return call('saveAISettings', { on: aon.checked, provider: prov.value, model: model.value, baseUrl: base.value, apiKey: key.value }).then(function (r) {
+          key.value = ''; key.placeholder = r.hasKey ? 'A key is saved (hidden). Paste a new one to replace it.' : 'Paste your API key here';
+          status.textContent = 'Saved. AI mode ' + (r.on && r.hasKey ? 'ON' : 'off') + '.';
+        });
+      };
+      aiCard.appendChild(el('label', { cls: 'row' }, [aon, ' Turn on AI mode']));
+      aiCard.appendChild(el('div', { style: 'height:8px' }));
+      aiCard.appendChild(prov); aiCard.appendChild(el('div', { style: 'height:8px' }));
+      aiCard.appendChild(el('div', { cls: 'row' }, [model, el('button', { cls: 'btn ghost small', text: 'Show models', onclick: function () {
+        save().then(function () { return call('listAIModels'); }).then(function (names) {
+          pick.textContent = ''; dl.textContent = '';
+          names.forEach(function (n) {
+            dl.appendChild(el('option', { value: n }));
+            pick.appendChild(el('button', { cls: 'chip', text: n, onclick: function () { model.value = n; } }));
+          });
+          status.textContent = names.length + ' models available. Tip: "flash-lite" models are the least busy on the free tier.';
+        });
+      } })]));
+      aiCard.appendChild(dl); aiCard.appendChild(pick);
+      aiCard.appendChild(el('div', { style: 'height:8px' })); aiCard.appendChild(base);
+      aiCard.appendChild(el('div', { style: 'height:8px' })); aiCard.appendChild(key);
+      aiCard.appendChild(el('div', { cls: 'acts' }, [
+        el('button', { cls: 'btn', text: 'Save', onclick: save }),
+        el('button', { cls: 'btn ghost', text: 'Test', onclick: function () { status.textContent = 'Testing...'; save().then(function () { return call('testAI'); }).then(function (r) { status.textContent = 'Connected: ' + r; }); } })
+      ]));
+      aiCard.appendChild(status);
+    });
+
+    var nOn = el('input', { type: 'checkbox' }); nOn.checked = s.newsOn; nOn.style.width = 'auto';
+    var nTopics = el('input', { value: s.newsTopics, placeholder: 'comma-separated topics, e.g. data analytics, education India, Noida' });
+    p.appendChild(card('News headlines', [el('label', { cls: 'row' }, [nOn, ' Show top headlines on Home and in the briefing']), el('div', { style: 'height:8px' }),
+      el('div', { cls: 'row' }, [nTopics, el('button', { cls: 'btn', text: 'Save', onclick: function () { call('saveNews', nOn.checked, nTopics.value).then(function () { toast('News saved.'); }); } })])]));
+
+    var wCard = card('Website login (rajsingh2311.github.io/jarvis)', [el('p', { cls: 'muted', text: 'Loading...' })]);
+    p.appendChild(wCard);
+    var drawWeb = function (w) {
+      wCard.textContent = '';
+      wCard.appendChild(el('h3', { text: 'Website login (rajsingh2311.github.io/jarvis)' }));
+      wCard.appendChild(el('p', { cls: 'muted', text: 'Your own ID and password for the Jarvis website. Only a scrambled (hashed) copy of the password is kept. Use a NEW password that you do not use for Gmail or anything else.' }));
+      wCard.appendChild(el('p', { cls: w.enabled ? 'ok' : 'muted', text: w.set ? ('Login ID: ' + w.user + (w.enabled ? ' - website login is ON' : ' - website login is OFF')) : 'No website login yet.' }));
+      var id = el('input', { placeholder: 'Login ID (e.g. ritesh)', value: w.user || '', autocomplete: 'off' });
+      var p1 = el('input', { type: 'password', placeholder: 'New password (10+ characters, letters and numbers)', autocomplete: 'new-password' });
+      var p2 = el('input', { type: 'password', placeholder: 'Type the new password again', autocomplete: 'new-password' });
+      var two = el('input', { type: 'checkbox' }); two.checked = w.twoStep; two.style.width = 'auto';
+      var on = el('input', { type: 'checkbox' }); on.checked = w.set ? w.enabled : true; on.style.width = 'auto';
+      wCard.appendChild(el('div', { cls: 'formgrid' }, [id, el('div', {}, []), p1, p2]));
+      wCard.appendChild(el('label', { cls: 'row', style: 'margin-top:8px' }, [two, ' 2-step: also ask for a 6-digit code sent to my Telegram (or email) - recommended']));
+      wCard.appendChild(el('label', { cls: 'row', style: 'margin-top:6px' }, [on, ' Website login is ON']));
+      wCard.appendChild(el('div', { cls: 'acts', style: 'margin-top:10px;display:flex;gap:8px;flex-wrap:wrap' }, [
+        el('button', { cls: 'btn', text: w.set ? 'Change ID / password' : 'Create login', onclick: function () {
+          if (p1.value !== p2.value) { toast('The two passwords are different.'); return; }
+          call('setWebLogin', id.value, p1.value, two.checked).then(function (r) { p1.value = ''; p2.value = ''; toast('Website login saved. Other devices were signed out.'); drawWeb(r); });
+        } }),
+        w.set ? el('button', { cls: 'btn ghost', text: 'Save switches', onclick: function () { call('setWebLoginOptions', on.checked, two.checked).then(function (r) { toast('Saved.'); drawWeb(r); }); } }) : null,
+        w.set ? el('button', { cls: 'btn ghost', text: 'Sign out everywhere', onclick: function () { call('signOutEverywhere').then(toast); } }) : null]));
+    };
+    google.script.run.withSuccessHandler(drawWeb).withFailureHandler(function () {
+      wCard.textContent = '';
+      wCard.appendChild(el('h3', { text: 'Website login' }));
+      wCard.appendChild(el('p', { cls: 'muted', text: 'For safety, the website ID and password can only be changed from your private Google-login link (see MY-JARVIS-LINKS.txt), or reset with "Forgot password" on the sign-in page.' }));
+    }).getWebLogin();
+
+    var hCard = card('Google accounts (Jarvis Helpers)', [el('p', { cls: 'muted', text: 'Loading...' })]);
+    p.appendChild(hCard);
+    var drawHelpers = function (list) {
+      hCard.textContent = '';
+      hCard.appendChild(el('h3', { text: 'Google accounts (Jarvis Helpers)' }));
+      hCard.appendChild(el('p', { cls: 'muted', text: 'Give Jarvis read-only access to the mail and Drive of your OTHER Google accounts. In each one, install the Jarvis Helper (folder jarvis-helper, see its steps), then paste its email, web-app URL and key here. Keys stay hidden on the server.' }));
+      list.forEach(function (h) {
+        var st = el('span', { cls: 'muted', text: '' });
+        hCard.appendChild(el('div', { cls: 'item' }, [el('div', { cls: 't', text: h.address }), el('div', { cls: 'm', text: h.url }), st,
+          el('div', { cls: 'acts' }, [
+            el('button', { cls: 'btn ghost small', text: 'Test', onclick: function () { st.textContent = 'Testing...'; call('testHelper', h.address).then(function (r) { st.textContent = r; }).catch(function () { st.textContent = ''; }); } }),
+            el('button', { cls: 'btn ghost small', text: 'Remove', onclick: function () { if (confirm('Stop reading ' + h.address + '?')) call('removeHelper', h.address).then(drawHelpers); } })])]));
+      });
+      var em = el('input', { placeholder: 'Email of that Google account', autocomplete: 'off' });
+      var url = el('input', { placeholder: 'Helper web-app URL (ends with /exec)', autocomplete: 'off' });
+      var key = el('input', { type: 'password', placeholder: 'Helper key (from its log)', autocomplete: 'off' });
+      var add = el('button', { cls: 'btn', text: 'Add account', onclick: function () {
+        add.disabled = true; add.textContent = 'Checking...';
+        call('addHelper', em.value, url.value, key.value).then(function (l) { toast('Connected. New mail appears at the next sync.'); drawHelpers(l); })
+          .catch(function () { add.disabled = false; add.textContent = 'Add account'; });
+      } });
+      hCard.appendChild(el('div', { cls: 'formgrid', style: 'margin-top:10px' }, [em, url, el('div', { cls: 'full' }, [key]), el('div', { cls: 'full' }, [add])]));
+    };
+    call('listHelpers').then(drawHelpers);
+
+    var tgCard = card('Telegram: Jarvis on your phone', [el('p', { cls: 'muted', text: 'Loading...' })]);
+    p.appendChild(tgCard);
+    var drawTg = function (t) {
+      tgCard.textContent = '';
+      tgCard.appendChild(el('h3', { text: 'Telegram: Jarvis on your phone' }));
+      if (!t.connected) {
+        tgCard.appendChild(el('p', { cls: 'muted', text: '1) In Telegram open @BotFather, send /newbot, follow the steps and copy the bot token. 2) Paste it here and click Connect. Your dashboard stays private: Jarvis checks Telegram every minute instead of opening a public address, and answers only your paired chat.' }));
+        var tok = el('input', { type: 'password', autocomplete: 'off', placeholder: 'Bot token from @BotFather' });
+        tgCard.appendChild(el('div', { cls: 'row' }, [tok, el('button', { cls: 'btn', text: 'Connect', onclick: function () { call('connectTelegram', tok.value).then(drawTg); } })]));
+      } else if (!t.paired) {
+        tgCard.appendChild(el('p', { text: 'Bot @' + t.bot + ' connected. Now open it in Telegram and send this pairing code:' }));
+        tgCard.appendChild(el('div', { cls: 'answer', text: t.pairCode }));
+        tgCard.appendChild(el('p', { cls: 'muted', text: 'Within a minute it replies "Paired". Only that chat will ever be answered.' }));
+        tgCard.appendChild(el('div', { cls: 'acts' }, [el('button', { cls: 'btn ghost small', text: 'Check again', onclick: function () { call('getTelegramStatus').then(drawTg); } }),
+          el('button', { cls: 'btn ghost small', text: 'Disconnect', onclick: function () { call('disconnectTelegram').then(drawTg); } })]));
+      } else {
+        tgCard.appendChild(el('p', { cls: 'ok', text: '✓ Paired with @' + t.bot + '. Message it anything you would say to Jarvis; all alerts and the morning briefing also arrive there.' }));
+        tgCard.appendChild(el('p', { cls: 'muted', text: 'Telegram keeps chats on its servers: never send passwords or OTPs to the bot.' }));
+        tgCard.appendChild(el('button', { cls: 'btn ghost small', text: 'Disconnect', onclick: function () { if (confirm('Disconnect Telegram?')) call('disconnectTelegram').then(drawTg); } }));
+      }
+    };
+    call('getTelegramStatus').then(drawTg);
+
+    var nCard = card('Notifications', [el('p', { cls: 'muted', text: 'Loading...' })]);
+    p.appendChild(nCard);
+    call('getNotifySettings').then(function (ns) {
+      nCard.textContent = '';
+      nCard.appendChild(el('h3', { text: 'Notifications: Jarvis\'s own, no email' }));
+      nCard.appendChild(el('p', { cls: 'muted', text: 'Every alert (reminders, briefing, important and suspicious mail) lands on the bell and the Alerts page, with a pop-up and a chime while the dashboard is open. For your phone, pair Telegram above. Email is not used, so Gmail\'s daily sending limit is never touched.' }));
+      var tg = el('input', { type: 'checkbox' }); tg.checked = ns.telegram; tg.style.width = 'auto';
+      var em = el('input', { type: 'checkbox' }); em.checked = ns.email; em.style.width = 'auto';
+      nCard.appendChild(el('label', { cls: 'row' }, [tg, ' Also push alerts to Telegram' + (ns.telegramPaired ? ' (paired)' : ' (not paired yet)')]));
+      nCard.appendChild(el('label', { cls: 'row', style: 'margin-top:6px' }, [em, ' Email copy as a fallback (off is recommended' + (ns.emailQuota !== null ? '; Gmail sends left today: ' + ns.emailQuota : '') + ')']));
+      nCard.appendChild(el('div', { cls: 'acts', style: 'margin-top:10px' }, [
+        el('button', { cls: 'btn', text: 'Save', onclick: function () { call('saveNotifySettings', tg.checked, em.checked).then(function () { toast('Notification settings saved.'); }); } }),
+        el('button', { cls: 'btn ghost', text: 'Send a test alert', onclick: function () { call('testNotification').then(function (u) { toast('Sent to: ' + u.join(', ')); pollAlerts(true); }); } }),
+        el('button', { cls: 'btn ghost', text: 'Desktop pop-ups', onclick: askDesktop })
+      ]));
+    });
+
+    var on = el('input', { type: 'checkbox' }); on.checked = s.briefingOn; on.style.width = 'auto';
+    var hr = el('input', { type: 'number', min: '0', max: '23', value: String(s.briefingHour) }); hr.style.maxWidth = '90px';
+    p.appendChild(card('Morning briefing', [el('div', { cls: 'row' }, [el('label', { cls: 'row' }, [on, ' Send me a briefing alert every day at hour']), hr,
+      el('button', { cls: 'btn', text: 'Save', onclick: function () { call('saveBriefing', on.checked, hr.value).then(function () { toast('Saved.'); }); } }),
+      el('button', { cls: 'btn ghost', text: 'Send one now', onclick: function () { call('sendBriefingNow').then(function () { toast('Briefing sent to your Alerts' + '.'); pollAlerts(true); }); } })])]));
+
+    var dl = el('a', { href: s.sheetUrl, target: '_blank', text: 'Open the data sheet' });
+    p.appendChild(card('Your data', [el('p', {}, [dl]), el('button', { cls: 'btn ghost', text: 'Download backup (JSON)', onclick: function () {
+      call('exportData').then(function (txt) {
+        var a = el('a', { href: URL.createObjectURL(new Blob([txt], { type: 'application/json' })), download: 'command-dashboard-backup.json' });
+        document.body.appendChild(a); a.click(); a.remove();
+      });
+    } })]));
+  });
+}
+
+function globalSearch() {
+  var q = $('gsearch').value.trim();
+  if (!q) return;
+  var p = page('Search: ' + q, '');
+  loading(p);
+  call('searchAll', q).then(function (r) {
+    p = page('Search: ' + q, r.filters ? 'Filters: ' + r.filters + '. Tip: use "from <name>", "in mail/notes/tasks" and time words like "last week".' : 'Ranked by relevance across notes, mail and tasks. Tip: use "from <name>", "in mail" or "last week".');
+    p.appendChild(card('Notes (' + r.notes.length + ')', r.notes.length ? r.notes.map(function (n) { return noteItem(n, r.terms, globalSearch); }) : [el('p', { cls: 'muted', text: 'No notes.' })]));
+    p.appendChild(card('Mail (' + r.mail.length + ')', r.mail.length ? r.mail.map(function (m) { return mailItem(m, {}, globalSearch); }) : [el('p', { cls: 'muted', text: 'No mail.' })]));
+    p.appendChild(card('Tasks (' + r.tasks.length + ')', r.tasks.length ? r.tasks.map(function (t) { return taskItem(t, globalSearch); }) : [el('p', { cls: 'muted', text: 'No tasks.' })]));
+  });
+}
+$('gsearch').addEventListener('keydown', function (e) { if (e.key === 'Enter') globalSearch(); });
+$('gsearch-go').addEventListener('click', globalSearch);
+
+var KIND_ICON = { briefing: '☀️', reminder: '⏰', mail: '✉️', security: '⚠️', info: '🔔' };
+var alertsSeen = null;
+function drawBadge(n) {
+  ['b-alerts', 'b-bell'].forEach(function (id) { var b = $(id); b.textContent = n > 99 ? '99+' : String(n); b.classList.toggle('hide', !n); });
+}
+function chime() {
+  try {
+    var A = window.AudioContext || window.webkitAudioContext; if (!A) return;
+    var c = chime.ctx || (chime.ctx = new A());
+    [880, 1320].forEach(function (f, i) {
+      var o = c.createOscillator(), g = c.createGain(), t = c.currentTime + i * 0.18;
+      o.frequency.value = f; g.gain.setValueAtTime(0.1, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.5);
+    });
+  } catch (e) {}
+}
+function popAlert(n) {
+  var box = el('div', { cls: 'pop k-' + n.kind });
+  box.appendChild(el('b', { text: (KIND_ICON[n.kind] || '🔔') + ' ' + n.title }));
+  if (n.text) box.appendChild(el('div', { cls: 'muted', text: n.text.slice(0, 180) + (n.text.length > 180 ? '...' : '') }));
+  box.appendChild(el('div', { cls: 'acts' }, [
+    el('button', { cls: 'btn small', text: 'Open', onclick: function () { box.remove(); go('alerts'); } }),
+    el('button', { cls: 'btn ghost small', text: 'Dismiss', onclick: function () { box.remove(); } })]));
+  $('pops').appendChild(box);
+  setTimeout(function () { if (box.parentNode) box.remove(); }, 30000);
+  try { if (window.Notification && Notification.permission === 'granted') new Notification('Jarvis: ' + n.title, { body: n.text.slice(0, 200) }); } catch (e) {}
+}
+var pollBusy = false, pollLast = 0;
+function pollAlerts(force) {
+  var now = Date.now();
+  if (pollBusy) return;
+  if (!force && (document.hidden || now - pollLast < 45000)) return;
+  pollBusy = true; pollLast = now;
+  google.script.run.withSuccessHandler(function (r) {
+    pollBusy = false;
+    drawBadge(r.unread);
+    var newest = r.items.length ? r.items[0].ms : 0;
+    if (alertsSeen === null) {
+      if (r.unread) toast('You have ' + r.unread + ' unread alert(s). Click the bell to see them.');
+    } else {
+      var fresh = r.items.filter(function (n) { return n.ms > alertsSeen && !n.read; }).reverse();
+      fresh.slice(-3).forEach(popAlert);
+      if (fresh.length) { chime(); if (state.page === 'alerts') drawAlerts(r); }
+    }
+    alertsSeen = Math.max(alertsSeen || 0, newest);
+  }).withFailureHandler(function () { pollBusy = false; }).getNotifications();
+}
+function askDesktop() {
+  try {
+    if (!window.Notification) throw new Error('none');
+    Notification.requestPermission().then(function (s) {
+      toast(s === 'granted' ? 'Desktop pop-ups are on.' : 'The browser blocked desktop pop-ups here. In-page alerts and Telegram still work.');
+    });
+  } catch (e) { toast('Desktop pop-ups are not available here. In-page alerts and Telegram still work.'); }
+}
+function showAlerts() {
+  var p = page('Alerts', '');
+  loading(p);
+  call('getNotifications').then(drawAlerts);
+}
+function drawAlerts(r) {
+  drawBadge(r.unread);
+  var p = page('Alerts', 'Jarvis\'s own notifications: reminders, briefing, important and suspicious mail. No email is used; they also go to Telegram if paired.');
+  p.appendChild(el('div', { cls: 'acts', style: 'margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap' }, [
+    el('button', { cls: 'btn', text: 'Mark all read', onclick: function () { call('markNotificationsRead', 'all').then(drawAlerts); } }),
+    el('button', { cls: 'btn ghost', text: 'Clear all', onclick: function () { if (confirm('Delete all alerts?')) call('clearNotifications').then(drawAlerts); } }),
+    el('button', { cls: 'btn ghost', text: 'Desktop pop-ups', onclick: askDesktop })]));
+  p.appendChild(card('', r.items.length ? r.items.map(alertItem) : [el('p', { cls: 'muted', text: 'No alerts yet. Reminders, the morning briefing and important mail will show up here.' })]));
+}
+function alertItem(n) {
+  var x = el('div', { cls: 'x hide', text: n.text });
+  return el('div', { cls: 'item' + (n.read ? '' : ' unread') }, [
+    el('div', { cls: 't', text: (KIND_ICON[n.kind] || '🔔') + ' ' + n.title }),
+    el('div', { cls: 'm', text: n.when + ' · ' + n.kind }), x,
+    el('div', { cls: 'acts' }, [
+      n.text ? el('button', { cls: 'btn ghost small', text: 'Show', onclick: function () { x.classList.toggle('hide'); } }) : null,
+      n.read ? null : el('button', { cls: 'btn ghost small', text: 'Mark read', onclick: function () { call('markNotificationsRead', n.id).then(drawAlerts); } })])]);
+}
+$('bell').addEventListener('click', function () { go('alerts'); });
+showHome();
+setTimeout(function () { pollAlerts(true); }, 4000);
+setInterval(function () { pollAlerts(false); }, 120000);
+document.addEventListener('visibilitychange', function () { if (!document.hidden) pollAlerts(false); });
+</script>
+</body>
+</html>

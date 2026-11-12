@@ -7,28 +7,137 @@
 <meta name="referrer" content="no-referrer">
 <title>Jarvis</title>
 <style>
-  :root { --bg:#0b1220; --panel:#111a2e; --line:#23314f; --text:#e6edf8; --muted:#94a3c0; --accent:#38bdf8; }
+  :root { --bg:#0b1220; --panel:#111a2e; --panel2:#16213a; --line:#23314f; --text:#e6edf8; --muted:#94a3c0; --accent:#38bdf8; --bad:#f87171; --good:#4ade80; }
   * { box-sizing:border-box; }
   body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px;
          background:var(--bg); color:var(--text); font-family:"Segoe UI",Roboto,Arial,sans-serif; }
-  .card { width:100%; max-width:380px; background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:28px 24px; text-align:center; }
-  h1 { margin:0 0 6px; font-size:22px; letter-spacing:2px; }
+  .card { width:100%; max-width:380px; background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:28px 24px; }
+  h1 { margin:0 0 4px; font-size:22px; letter-spacing:2px; text-align:center; }
   h1 span { color:var(--accent); }
-  p { color:var(--muted); font-size:14px; line-height:1.5; margin:0 0 20px; }
-  a.btn { display:block; background:var(--accent); color:#04121f; text-decoration:none; font-weight:700; padding:12px 16px; border-radius:10px; }
-  a.btn:focus-visible { outline:3px solid #fff; outline-offset:2px; }
-  small { display:block; margin-top:16px; color:var(--muted); font-size:12px; }
+  .sub { color:var(--muted); font-size:13px; text-align:center; margin:0 0 20px; }
+  label { display:block; font-size:13px; color:var(--muted); margin:12px 0 6px; }
+  input { width:100%; background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:10px; padding:11px 12px; font:inherit; }
+  input:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+  button { width:100%; margin-top:18px; background:var(--accent); color:#04121f; border:none; border-radius:10px; padding:12px; font:inherit; font-weight:700; cursor:pointer; }
+  button:disabled { opacity:.6; cursor:wait; }
+  button.link { background:none; color:var(--accent); font-weight:500; margin-top:12px; padding:6px; }
+  .msg { min-height:20px; margin-top:12px; font-size:13px; text-align:center; }
+  .msg.err { color:var(--bad); } .msg.ok { color:var(--good); }
+  .hide { display:none; }
+  small { display:block; margin-top:16px; color:var(--muted); font-size:12px; text-align:center; }
 </style>
 </head>
 <body>
-  <main class="card">
-    <h1>JARVIS<span>.</span></h1>
-    <p>Private assistant. Opening the secure Google sign-in&hellip;</p>
-    <a class="btn" id="go" href="https://script.google.com/macros/s/AKfycbwBsevvk8x1u0TO47yz4ot4DbbWYlgHAVshB9cR433GkevgcL-TpSF7lPRw9wz5MslF/exec">Sign in with Google</a>
-    <small>Only the owner's Google account is allowed in.</small>
-  </main>
-  <script>
-    setTimeout(function () { location.replace(document.getElementById('go').href); }, 600);
-  </script>
+<main class="card">
+  <h1>JARVIS<span>.</span></h1>
+  <p class="sub" id="sub">Private assistant - sign in</p>
+
+  <form id="f-login" autocomplete="on">
+    <label for="user">Login ID</label>
+    <input id="user" name="username" autocomplete="username" required>
+    <label for="pass">Password</label>
+    <input id="pass" name="password" type="password" autocomplete="current-password" required>
+    <button id="b-login" type="submit">Sign in</button>
+    <button class="link" type="button" id="to-forgot">Forgot password?</button>
+  </form>
+
+  <form id="f-code" class="hide">
+    <label for="code">6-digit code</label>
+    <input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+    <button id="b-code" type="submit">Verify</button>
+    <button class="link" type="button" id="to-login1">Back</button>
+  </form>
+
+  <form id="f-forgot" class="hide">
+    <label for="fuser">Login ID</label>
+    <input id="fuser" autocomplete="username" required>
+    <button id="b-forgot" type="submit">Send reset code</button>
+    <div id="reset-step" class="hide">
+      <label for="rcode">Reset code</label>
+      <input id="rcode" inputmode="numeric" maxlength="6">
+      <label for="rp1">New password</label>
+      <input id="rp1" type="password" autocomplete="new-password">
+      <label for="rp2">New password again</label>
+      <input id="rp2" type="password" autocomplete="new-password">
+      <button id="b-reset" type="button">Change password</button>
+    </div>
+    <button class="link" type="button" id="to-login2">Back to sign in</button>
+  </form>
+
+  <div class="msg" id="msg" role="status" aria-live="polite"></div>
+  <small>Codes go only to the owner's Telegram or email.</small>
+</main>
+<script>
+(function () {
+  var API_URL = 'https://script.google.com/macros/s/AKfycbx7FeaoVlZbw-2nv_ouBJdag0gqMo2LtIA8lRCBBLMD2Xe4L_j1XgDWMdDppEYFoZR8/exec';
+  var KEY = 'jarvis_session';
+  var challenge = '';
+  function $(id) { return document.getElementById(id); }
+  function show(id) { ['f-login', 'f-code', 'f-forgot'].forEach(function (f) { $(f).classList.toggle('hide', f !== id); }); say(''); }
+  function say(t, kind) { var m = $('msg'); m.textContent = t; m.className = 'msg' + (kind ? ' ' + kind : ''); }
+  function busy(btn, on, label) { btn.disabled = on; if (label) btn.textContent = label; }
+  function post(body) {
+    return fetch(API_URL, { method: 'POST', body: JSON.stringify(body), redirect: 'follow', cache: 'no-store' })
+      .then(function (r) { return r.json(); });
+  }
+  function enter(token) {
+    try { sessionStorage.setItem(KEY, token); } catch (e) { say('Your browser blocked storage for this site. Allow it and try again.', 'err'); return; }
+    location.replace('app.html');
+  }
+
+  try { if (sessionStorage.getItem(KEY)) location.replace('app.html'); } catch (e) {}
+  var q = location.search;
+  if (/expired=1/.test(q)) say('Your session ended. Please sign in again.');
+  if (/out=1/.test(q)) say('Signed out.', 'ok');
+
+  $('f-login').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var b = $('b-login'); busy(b, true, 'Signing in...'); say('');
+    post({ action: 'login', user: $('user').value, pass: $('pass').value }).then(function (r) {
+      busy(b, false, 'Sign in');
+      if (!r.ok) { say(r.error, 'err'); return; }
+      $('pass').value = '';
+      if (r.need2) { challenge = r.challenge; show('f-code'); say('Code sent to your ' + r.via + '.', 'ok'); $('code').focus(); return; }
+      enter(r.token);
+    }).catch(function () { busy(b, false, 'Sign in'); say('Could not reach Jarvis. Check your internet.', 'err'); });
+  });
+
+  $('f-code').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var b = $('b-code'); busy(b, true, 'Checking...');
+    post({ action: 'verify', challenge: challenge, code: $('code').value }).then(function (r) {
+      busy(b, false, 'Verify');
+      if (!r.ok) { say(r.error, 'err'); if (/again/.test(r.error)) show('f-login'); return; }
+      enter(r.token);
+    }).catch(function () { busy(b, false, 'Verify'); say('Could not reach Jarvis.', 'err'); });
+  });
+
+  $('f-forgot').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var b = $('b-forgot'); busy(b, true, 'Sending...');
+    post({ action: 'forgot', user: $('fuser').value }).then(function (r) {
+      busy(b, false, 'Send reset code');
+      if (!r.ok) { say(r.error, 'err'); return; }
+      $('reset-step').classList.remove('hide');
+      say('If that ID exists, a code was sent to the owner\'s Telegram or email.', 'ok');
+    }).catch(function () { busy(b, false, 'Send reset code'); say('Could not reach Jarvis.', 'err'); });
+  });
+
+  $('b-reset').addEventListener('click', function () {
+    if ($('rp1').value !== $('rp2').value) { say('The two passwords are different.', 'err'); return; }
+    var b = $('b-reset'); busy(b, true, 'Saving...');
+    post({ action: 'reset', code: $('rcode').value, pass: $('rp1').value }).then(function (r) {
+      busy(b, false, 'Change password');
+      if (!r.ok) { say(r.error, 'err'); return; }
+      $('rp1').value = ''; $('rp2').value = '';
+      show('f-login'); say('Password changed. Sign in with the new password.', 'ok');
+    }).catch(function () { busy(b, false, 'Change password'); say('Could not reach Jarvis.', 'err'); });
+  });
+
+  $('to-forgot').addEventListener('click', function () { show('f-forgot'); $('fuser').value = $('user').value; });
+  $('to-login1').addEventListener('click', function () { show('f-login'); });
+  $('to-login2').addEventListener('click', function () { show('f-login'); });
+})();
+</script>
 </body>
 </html>
