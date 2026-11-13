@@ -4,7 +4,7 @@
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Jarvis</title>
-<script src="api.js?v=202611132149"></script>
+<script src="api.js?v=202611132203"></script>
 <base target="_top">
 <meta charset="utf-8">
 <style>
@@ -48,6 +48,20 @@
   .item .acts { margin-top:8px; display:flex; gap:6px; flex-wrap:wrap; }
   .chip { display:inline-block; border:1px solid var(--line); border-radius:999px; padding:2px 9px; font-size:12px; color:var(--muted); margin:2px 4px 2px 0; cursor:pointer; background:none; }
   .chip.on { background:var(--accent); color:#04121f; border-color:var(--accent); }
+  .tabs { display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; scrollbar-width:thin; }
+  .tab { flex:0 0 auto; background:var(--panel); border:1px solid var(--line); color:var(--text); border-radius:10px; padding:8px 12px; cursor:pointer; font:inherit; font-size:13px; white-space:nowrap; }
+  .tab.on { background:var(--panel2); border-color:var(--accent); box-shadow:inset 0 -2px 0 var(--accent); font-weight:600; }
+  .tab.add { color:var(--accent); border-style:dashed; }
+  .tab .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+  .catbar { margin:10px 0; display:flex; flex-wrap:wrap; gap:2px; }
+  .cat { font-size:11px; padding:0 7px; border-radius:999px; border:1px solid var(--line); }
+  .cat.c-Promotions { color:#f9a8d4; border-color:#9d174d; }
+  .cat.c-Social { color:#93c5fd; border-color:#1e40af; }
+  .cat.c-Updates { color:#cbd5e1; }
+  .cat.c-Needs { color:var(--warn); border-color:#92400e; }
+  .cat.c-Bills { color:var(--good); border-color:#166534; }
+  .cat.c-Suspicious { color:var(--bad); border-color:#991b1b; }
+  @media (max-width: 760px) { .catbar { flex-wrap:nowrap; overflow-x:auto; padding-bottom:4px; } .catbar .chip { flex:0 0 auto; } }
   .acct { display:inline-block; border-radius:999px; padding:1px 8px; font-size:11px; font-weight:600; color:#04121f; }
   .answer { background:var(--panel2); border:1px solid var(--accent); border-radius:12px; padding:14px; margin:14px 0; font-size:15px; line-height:1.5; }
   mark { background:rgba(56,189,248,.28); color:inherit; border-radius:3px; padding:0 2px; }
@@ -162,7 +176,7 @@
 
 <script>
 var state = { page: 'home', tag: '', inbox: { account: '', category: '', unread: false } };
-var CATS = ['Needs reply', 'Bills', 'OTP & security', 'Newsletters', 'Suspicious', 'Other'];
+var CATS = ['Needs reply', 'Promotions', 'Social', 'Updates', 'Bills', 'OTP & security', 'Suspicious', 'Other'];
 
 function $(id) { return document.getElementById(id); }
 var RX_BOLD = new RegExp('\\*\\*([^*\\n]+?)\\*\\*', 'g');
@@ -296,8 +310,9 @@ function mailItem(m, colours, onChange) {
     } })
   ]);
   return el('div', { cls: 'item' + (m.read ? '' : ' unread') }, [
-    el('div', { cls: 't', text: (m.flags ? '⚠ ' : '') + m.subject }),
-    el('div', { cls: 'm' }, [acctChip(m.account, colours), ' ' + m.from + ' · ' + m.date + ' · ' + m.category]),
+    el('div', { cls: 't', text: (m.flags ? '⚠ ' : '') + (m.important ? '⭐ ' : '') + m.subject }),
+    el('div', { cls: 'm' }, [acctChip(m.account, colours), ' ' + m.from + ' · ' + m.date + ' · ',
+      el('span', { cls: 'cat c-' + String(m.category).split(' ')[0].replace(/[^A-Za-z]/g, ''), text: m.category })]),
     m.flags ? el('div', { cls: 'm over', text: 'Security shield: ' + m.flags + '. Do not click links or share details.' }) : null,
     el('div', { cls: 'x muted', text: m.summary }), acts
   ]);
@@ -604,23 +619,39 @@ function showInbox() {
   loading(p);
   call('listMail', state.inbox).then(function (r) {
     p = page('Inbox', 'All your accounts in one place. New mail arrives every 15 minutes. The full email stays in Gmail.');
-    var acct = el('select', {}, [el('option', { value: '', text: 'All accounts' })].concat(r.accounts.map(function (a) { return el('option', { value: a, text: a }); })));
-    acct.value = state.inbox.account;
-    acct.addEventListener('change', function () { state.inbox.account = acct.value; showInbox(); });
+    var accts = el('div', { cls: 'tabs' });
+    accts.appendChild(el('button', { cls: 'tab' + (state.inbox.account ? '' : ' on'),
+      text: '📬 All accounts' + (r.totalUnread ? ' (' + r.totalUnread + ')' : ''),
+      onclick: function () { state.inbox.account = ''; showInbox(); } }));
+    r.accounts.forEach(function (a) {
+      var n = (r.accountCounts || {})[a] || 0;
+      var b = el('button', { cls: 'tab' + (state.inbox.account === a ? ' on' : ''), title: a, onclick: function () { state.inbox.account = a; showInbox(); } });
+      var dot = el('span', { cls: 'dot' }); dot.style.background = (r.colours && r.colours[a]) || '#94a3c0';
+      b.appendChild(dot); b.appendChild(document.createTextNode(a.split('@')[0] + (n ? ' (' + n + ')' : '')));
+      accts.appendChild(b);
+    });
+    accts.appendChild(el('button', { cls: 'tab add', text: '+ Add Gmail', onclick: function () { go('settings'); toast('Scroll to "Google accounts" to add another Gmail.'); } }));
+    p.appendChild(accts);
+
     var unread = el('input', { type: 'checkbox' }); unread.checked = state.inbox.unread; unread.style.width = 'auto';
     unread.addEventListener('change', function () { state.inbox.unread = unread.checked; showInbox(); });
-    var syncBtn = el('button', { cls: 'btn ghost', text: 'Check now', onclick: function () {
+    var syncBtn = el('button', { cls: 'btn ghost small', text: 'Check now', onclick: function () {
       syncBtn.disabled = true; syncBtn.textContent = 'Checking...';
       call('syncMailNow').then(function (n) { toast(n + ' new mail(s).'); showInbox(); });
     } });
-    p.appendChild(el('div', { cls: 'row' }, [acct, el('label', { cls: 'row muted' }, [unread, ' Unread only']), syncBtn]));
-    var cats = el('div', { style: 'margin:12px 0' });
+    p.appendChild(el('div', { cls: 'row', style: 'margin-top:8px' }, [el('label', { cls: 'row muted' }, [unread, ' Unread only']), syncBtn]));
+
+    var ICON = { 'Important': '⭐', 'Needs reply': '↩️', 'Promotions': '🏷️', 'Social': '👥', 'Updates': '🔔', 'Bills': '🧾', 'OTP & security': '🔐', 'Suspicious': '⚠️', 'Other': '📁' };
+    var cats = el('div', { cls: 'catbar' });
     cats.appendChild(el('button', { cls: 'chip' + (state.inbox.category ? '' : ' on'), text: 'All', onclick: function () { state.inbox.category = ''; showInbox(); } }));
-    r.categories.forEach(function (c) {
-      cats.appendChild(el('button', { cls: 'chip' + (state.inbox.category === c ? ' on' : ''), text: c + (r.counts[c] ? ' (' + r.counts[c] + ')' : ''), onclick: function () { state.inbox.category = c; showInbox(); } }));
+    ['Important'].concat(r.categories).forEach(function (c) {
+      var n = r.counts[c] || 0;
+      cats.appendChild(el('button', { cls: 'chip' + (state.inbox.category === c ? ' on' : ''), text: (ICON[c] || '') + ' ' + c + (n ? ' (' + n + ')' : ''),
+        onclick: function () { state.inbox.category = c; showInbox(); } }));
     });
     p.appendChild(cats);
-    var list = card('', r.mail.length ? r.mail.map(function (m) { return mailItem(m, r.colours, showInbox); }) : [el('p', { cls: 'muted', text: 'No mail here. Click "Check now", or set up your accounts in Settings.' })]);
+    var empty = r.accounts.length ? 'No mail here. Try another tab, or click "Check now".' : 'No mail yet. Click "Check now", or add your Gmail accounts with "+ Add Gmail".';
+    var list = card('', r.mail.length ? r.mail.map(function (m) { return mailItem(m, r.colours, showInbox); }) : [el('p', { cls: 'muted', text: empty })]);
     p.appendChild(list);
   });
 }
