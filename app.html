@@ -4,7 +4,7 @@
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Jarvis</title>
-<script src="api.js?v=202611130016"></script>
+<script src="api.js?v=202611131422"></script>
 <base target="_top">
 <meta charset="utf-8">
 <style>
@@ -61,6 +61,15 @@
   .bubble.me { background:#1e3a5f; align-self:flex-end; }
   .bubble.jv { background:var(--panel2); border:1px solid var(--line); align-self:flex-start; }
   .bubble.jv:before { content:"JARVIS"; display:block; font-size:10px; letter-spacing:2px; color:var(--accent); font-weight:700; margin-bottom:4px; }
+  .bubble.fmt { white-space:normal; }
+  .bubble .h { font-weight:700; color:#fff; margin:8px 0 3px; }
+  .bubble .h.first { margin-top:0; font-size:15px; }
+  .bubble .li { padding-left:16px; position:relative; margin:2px 0; }
+  .bubble .li:before { content:"•"; position:absolute; left:3px; color:var(--accent); }
+  .bubble .fix { font-style:italic; color:var(--muted); border-left:3px solid var(--warn); padding-left:8px; margin-bottom:8px; }
+  .bubble .sp { height:6px; }
+  .bubble b { color:#fff; }
+  .bubble code { background:rgba(56,189,248,.15); border-radius:4px; padding:0 4px; font-family:Consolas,monospace; font-size:13px; }
   .composer { display:flex; gap:8px; position:sticky; bottom:0; background:var(--bg); padding:10px 0; }
   .composer textarea { min-height:44px; height:44px; }
   .aimode { font-size:12px; padding:2px 10px; border-radius:999px; border:1px solid var(--line); }
@@ -96,6 +105,32 @@
     nav.side button { width:auto; flex:0 0 auto; text-align:center; font-size:12px; padding:8px 10px; }
     .page { padding:14px 14px 90px; }
     .top { padding:10px 14px; }
+    nav.side { padding-bottom:calc(6px + env(safe-area-inset-bottom)); scrollbar-width:none; }
+    nav.side::-webkit-scrollbar { display:none; }
+    input, textarea, select { font-size:16px; }
+    .top { gap:6px; }
+    .top .btn { padding:9px 10px; }
+    h2 { font-size:18px; }
+    .grid { grid-template-columns:1fr; gap:12px; }
+    .card { padding:13px; border-radius:12px; }
+    .stat { gap:8px; }
+    .stat div { flex:1 1 calc(50% - 8px); min-width:0; padding:10px 12px; }
+    .stat b { font-size:20px; }
+    .bubble { max-width:94%; font-size:15px; }
+    .chat { min-height:30vh; }
+    .composer { bottom:calc(52px + env(safe-area-inset-bottom)); padding:8px 0; }
+    .composer textarea { font-size:16px; }
+    .row > input, .row > select { min-width:0; flex:1 1 100%; }
+    .item .acts .btn { flex:1 1 auto; }
+    .toast { left:14px; right:14px; bottom:76px; max-width:none; }
+    .pops { top:58px; }
+    .answer { font-size:14px; }
+    img, table { max-width:100%; }
+    html, body { overflow-x:hidden; }
+  }
+  @media (max-width: 380px) {
+    nav.side button { padding:8px 7px; font-size:11px; }
+    .stat div { flex:1 1 100%; }
   }
 </style>
 </head>
@@ -130,6 +165,34 @@ var state = { page: 'home', tag: '', inbox: { account: '', category: '', unread:
 var CATS = ['Needs reply', 'Bills', 'OTP & security', 'Newsletters', 'Suspicious', 'Other'];
 
 function $(id) { return document.getElementById(id); }
+var RX_BOLD = new RegExp('\\*\\*([^*\\n]+?)\\*\\*', 'g');
+var RX_CODE = new RegExp('`([^`\\n]+)`', 'g');
+var RX_EMOJI = new RegExp('^\\p{Extended_Pictographic}', 'u');
+function escHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function fmtInline(s) { return escHtml(s).replace(RX_BOLD, '<b>$1</b>').replace(RX_CODE, '<code>$1</code>'); }
+function fmtReply(text) {
+  var lines = String(text || '').replace(/\r/g, '').split('\n');
+  var out = [], firstDone = false;
+  lines.forEach(function (line, i) {
+    var t = line.trim();
+    if (!t) { if (out.length) out.push('<div class="sp"></div>'); return; }
+    if (t.indexOf('✏') === 0) { out.push('<div class="fix">' + fmtInline(t) + '</div>'); return; }
+    var isHash = /^#{1,6}\s+\S/.test(t);
+    var isHead = isHash || (t.length <= 80 && /:$/.test(t) && (RX_EMOJI.test(t) || t.indexOf('**') === 0)) ||
+      (!firstDone && t.length <= 90 && RX_EMOJI.test(t) && lines.length > 1) ||
+      (!firstDone && t.length <= 120 && /:$/.test(t) && lines.length > 1);
+    if (isHead) {
+      out.push('<div class="h' + (firstDone ? '' : ' first') + '">' + fmtInline(t.replace(/^#{1,6}\s+/, '').split('**').join('')) + '</div>');
+      firstDone = true; return;
+    }
+    firstDone = true;
+    var m = t.match(/^[-*•]\s+(.*)$/);
+    if (m) { out.push('<div class="li">' + fmtInline(m[1]) + '</div>'); return; }
+    out.push('<div>' + fmtInline(t) + '</div>');
+  });
+  return out.join('');
+}
+
 function el(tag, props, kids) {
   var e = document.createElement(tag);
   if (props) Object.keys(props).forEach(function (k) {
@@ -316,6 +379,7 @@ function showJarvis() {
   p.appendChild(el('div', { cls: 'composer' }, [input, btn]));
   function bubble(text, who, extra) {
     var b = el('div', { cls: 'bubble ' + who, text: text });
+    if (who === 'jv' && text !== '...') { b.className = 'bubble jv fmt'; b.innerHTML = fmtReply(text); }
     if (extra && extra.length) b.appendChild(el('div', { cls: 'm', style: 'margin-top:6px', text: 'From memory: ' + extra.join(' | ') }));
     log.appendChild(b);
     window.scrollTo(0, document.body.scrollHeight);
