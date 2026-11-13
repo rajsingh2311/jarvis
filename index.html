@@ -86,12 +86,25 @@
     return fetch(API_URL, { method: 'POST', body: JSON.stringify(body), redirect: 'follow', cache: 'no-store' })
       .then(function (r) { return r.json(); });
   }
+  // The session key is kept on this device for up to 6 hours (the server ends it then anyway),
+  // so reopening the site does not ask for the password and code again. "Sign out" removes it.
+  var MAX_AGE = 6 * 3600 * 1000 - 60000;
   function enter(token) {
-    try { sessionStorage.setItem(KEY, token); } catch (e) { say('Your browser blocked storage for this site. Allow it and try again.', 'err'); return; }
+    try { localStorage.setItem(KEY, token); localStorage.setItem(KEY + '_t', String(Date.now())); }
+    catch (e) { say('Your browser blocked storage for this site. Allow it and try again.', 'err'); return; }
     location.replace('app.html');
   }
+  function saved() {
+    try {
+      var t = localStorage.getItem(KEY), at = Number(localStorage.getItem(KEY + '_t') || 0);
+      if (t && Date.now() - at < MAX_AGE) return t;
+      localStorage.removeItem(KEY); localStorage.removeItem(KEY + '_t');
+    } catch (e) {}
+    return null;
+  }
 
-  try { if (sessionStorage.getItem(KEY)) location.replace('app.html'); } catch (e) {}
+  if (saved()) { location.replace('app.html'); return; }
+  post({ action: 'ping' }).catch(function () {});        // wake the server while the password is typed
   var q = location.search;
   if (/expired=1/.test(q)) say('Your session ended. Please sign in again.');
   if (/out=1/.test(q)) say('Signed out.', 'ok');

@@ -1,11 +1,17 @@
 /* Jarvis website bridge: the dashboard page talks to your Jarvis API with your session key.
-   No data is stored here; the session key lives only in this browser tab (sessionStorage). */
+   No data is stored here; only the session key is kept on this device, for at most 6 hours. */
 (function () {
   var API_URL = 'https://script.google.com/macros/s/AKfycbx7FeaoVlZbw-2nv_ouBJdag0gqMo2LtIA8lRCBBLMD2Xe4L_j1XgDWMdDppEYFoZR8/exec';
   var KEY = 'jarvis_session';
+  var MAX_AGE = 6 * 3600 * 1000 - 60000;
 
-  function token() { try { return sessionStorage.getItem(KEY); } catch (e) { return null; } }
-  function clearToken() { try { sessionStorage.removeItem(KEY); } catch (e) {} }
+  function token() {
+    try {
+      var t = localStorage.getItem(KEY), at = Number(localStorage.getItem(KEY + '_t') || 0);
+      return t && Date.now() - at < MAX_AGE ? t : null;
+    } catch (e) { return null; }
+  }
+  function clearToken() { try { localStorage.removeItem(KEY); localStorage.removeItem(KEY + '_t'); sessionStorage.removeItem(KEY); } catch (e) {} }
   if (!token()) { location.replace('./'); return; }
 
   function post(body) {
