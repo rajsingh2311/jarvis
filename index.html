@@ -98,7 +98,7 @@
     try {
       var t = localStorage.getItem(KEY), at = Number(localStorage.getItem(KEY + '_t') || 0);
       if (t && Date.now() - at < MAX_AGE) return t;
-      localStorage.removeItem(KEY); localStorage.removeItem(KEY + '_t');
+      localStorage.removeItem(KEY); localStorage.removeItem(KEY + '_t'); localStorage.removeItem('jarvis_cache');
     } catch (e) {}
     return null;
   }
