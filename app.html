@@ -4,7 +4,7 @@
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Jarvis</title>
-<script src="api.js?v=202611141430"></script>
+<script src="api.js?v=202611142355"></script>
 <base target="_top">
 <meta charset="utf-8">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -245,6 +245,7 @@
   .reader-panel { box-shadow:0 20px 60px rgba(0,0,0,.5); border-radius:18px; }
   .msg-card { border-radius:14px; }
   .safe p { margin:6px 0; line-height:1.5; }
+  .task-notes { margin-top:6px; padding:8px 10px; border-radius:10px; background:rgba(255,255,255,.03); border:1px solid var(--line); font-size:13.5px; white-space:pre-wrap; }
   .cal .day { border-radius:12px; }
 
   @media (max-width: 900px) { .tiles { grid-template-columns:repeat(2,1fr); } }
@@ -493,7 +494,8 @@ function taskItem(t, onChange) {
   }
   return el('div', { cls: 'item' }, [
     el('div', { cls: 't', text: t.title }),
-    el('div', { cls: t.overdue ? 'm over' : 'm', text: (t.dueLabel ? (t.overdue ? 'Overdue · ' : 'Due ') + t.dueLabel : 'No due date') + ' · ' + t.source }),
+    el('div', { cls: t.overdue ? 'm over' : 'm', text: (t.dueLabel ? (t.overdue ? 'Overdue · ' : 'Due ') + t.dueLabel : 'No due date') + (t.source ? ' · ' + t.source : '') }),
+    t.notes ? el('div', { cls: 'x task-notes', text: '📝 ' + t.notes }) : null,
     acts
   ]);
 }
