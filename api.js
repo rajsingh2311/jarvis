@@ -134,7 +134,7 @@
     var nav = document.getElementById('nav');
     if (!nav) return;
     var b = document.createElement('button');
-    b.textContent = 'Sign out';
+    b.innerHTML = '<i>🚪</i><em>Sign out</em>';
     b.addEventListener('click', window.jarvisSignOut);
     nav.appendChild(b);
   });

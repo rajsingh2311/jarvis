@@ -4,9 +4,11 @@
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Jarvis</title>
-<script src="api.js?v=202611141415"></script>
+<script src="api.js?v=202611141430"></script>
 <base target="_top">
 <meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <style>
   :root { --bg:#0b1220; --panel:#111a2e; --panel2:#16213a; --line:#23314f; --text:#e6edf8; --muted:#94a3c0; --accent:#38bdf8; --good:#4ade80; --warn:#fbbf24; --bad:#f87171; }
   * { box-sizing:border-box; }
@@ -158,25 +160,133 @@
     nav.side button { padding:8px 7px; font-size:11px; }
     .stat div { flex:1 1 100%; }
   }
+
+  /* ===================== DESIGN v2: calm, modern, phone-first ===================== */
+  :root { --bg:#070b16; --panel:#0e1526; --panel2:#141d33; --line:#1f2a44; --line2:#2a3858; --text:#eaf0fb; --muted:#8f9bb8;
+          --accent:#3dd3ff; --accent2:#8b7bff; --good:#34d399; --warn:#fbbf24; --bad:#f87171;
+          --grad:linear-gradient(135deg,#3dd3ff 0%,#8b7bff 100%); --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.35); }
+  body { font-family:"Inter","Segoe UI",Roboto,Arial,sans-serif; font-size:14.5px; letter-spacing:.1px;
+         background:radial-gradient(1200px 600px at 85% -10%, rgba(139,123,255,.12), transparent 60%),
+                    radial-gradient(900px 500px at -10% 10%, rgba(61,211,255,.08), transparent 60%), var(--bg); background-attachment:fixed; }
+  ::selection { background:rgba(61,211,255,.3); }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+
+  nav.side { background:rgba(10,16,30,.85); backdrop-filter:blur(12px); border-right:1px solid var(--line); padding:18px 12px; width:220px; flex:0 0 220px; }
+  nav.side h1 { display:flex; align-items:center; gap:10px; font-size:17px; font-weight:800; letter-spacing:2px; margin:2px 8px 22px; }
+  nav.side h1 .logo { width:32px; height:32px; border-radius:10px; background:var(--grad); color:#061022; display:grid; place-items:center; font-size:17px; letter-spacing:0; box-shadow:0 6px 18px rgba(61,211,255,.3); }
+  nav.side button { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:12px; font-weight:500; color:var(--muted); transition:background .15s, color .15s; margin-bottom:3px; }
+  nav.side button i { font-style:normal; width:22px; text-align:center; font-size:16px; }
+  nav.side button em { font-style:normal; flex:1; }
+  nav.side button:hover { background:rgba(255,255,255,.04); color:var(--text); }
+  nav.side button.on { background:linear-gradient(90deg, rgba(61,211,255,.16), rgba(139,123,255,.10)); color:#fff; font-weight:600; box-shadow:inset 3px 0 0 var(--accent); }
+  nav.side .badge { margin-left:auto; background:var(--grad); color:#061022; }
+
+  .top { background:rgba(7,11,22,.75); backdrop-filter:blur(14px); border-bottom:1px solid var(--line); padding:12px 24px; }
+  .top input { border-radius:999px; padding:10px 16px; background:var(--panel); }
+  .page { padding:24px; max-width:1180px; margin:0 auto; }
+  h2 { font-size:24px; font-weight:800; letter-spacing:-.3px; margin:0 0 6px; }
+  .sub { font-size:14px; }
+
+  input, textarea, select { background:var(--panel2); border:1px solid var(--line2); border-radius:12px; transition:border-color .15s, box-shadow .15s; }
+  input:focus, textarea:focus, select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(61,211,255,.18); }
+  .btn { background:var(--grad); color:#061022; border-radius:12px; font-weight:700; padding:10px 16px; box-shadow:0 6px 18px rgba(61,211,255,.18); transition:transform .1s, box-shadow .15s, filter .15s; }
+  .btn:hover { filter:brightness(1.07); box-shadow:0 8px 22px rgba(61,211,255,.28); }
+  .btn:active { transform:translateY(1px); }
+  .btn.ghost { background:rgba(255,255,255,.03); border:1px solid var(--line2); color:var(--text); box-shadow:none; font-weight:500; }
+  .btn.ghost:hover { background:rgba(255,255,255,.07); border-color:var(--accent); }
+  .btn.small { padding:6px 11px; border-radius:10px; font-size:12.5px; }
+
+  .card { background:linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,0)), var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow); }
+  .card h3 { font-size:15px; font-weight:700; margin:0 0 12px; letter-spacing:.1px; }
+  .grid { gap:18px; grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr)); align-items:start; }
+  .item { padding:12px 0; }
+  .item .t { font-weight:600; line-height:1.35; }
+  .item .x { color:#c8d1e6; }
+  .unread { border-left:3px solid var(--accent); padding-left:12px; border-radius:2px; }
+  .chip { border-radius:999px; padding:4px 11px; font-size:12.5px; transition:all .15s; }
+  .chip:hover { border-color:var(--accent); color:var(--text); }
+  .chip.on { background:var(--grad); color:#061022; border-color:transparent; font-weight:600; }
+  .tab { border-radius:12px; padding:9px 14px; }
+  .tab.on { background:linear-gradient(135deg, rgba(61,211,255,.14), rgba(139,123,255,.12)); box-shadow:inset 0 0 0 1px var(--accent); }
+
+  /* home */
+  .hero { display:flex; gap:18px; align-items:center; justify-content:space-between; flex-wrap:wrap; padding:22px; margin-bottom:18px; border-radius:20px;
+          background:linear-gradient(135deg, rgba(61,211,255,.14), rgba(139,123,255,.16)), var(--panel); border:1px solid var(--line2); box-shadow:var(--shadow); }
+  .hero h2 { font-size:28px; margin:2px 0 6px; }
+  .hero .sub { margin:0; color:#c3cde4; }
+  .hero-kicker { text-transform:uppercase; letter-spacing:1.6px; font-size:11.5px; color:var(--accent); font-weight:700; }
+  .hero-ask { display:flex; gap:8px; flex:1 1 340px; max-width:520px; }
+  .hero-ask input { border-radius:999px; padding:12px 18px; background:rgba(7,11,22,.6); }
+  .hero-ask .btn { border-radius:999px; padding:10px 20px; }
+  .tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:18px; }
+  .tile { text-align:left; cursor:pointer; font:inherit; color:var(--text); border:1px solid var(--line); border-radius:var(--radius); padding:16px; background:var(--panel);
+          display:flex; flex-direction:column; gap:4px; transition:transform .15s, border-color .15s, box-shadow .15s; position:relative; overflow:hidden; }
+  .tile:hover { transform:translateY(-2px); border-color:var(--line2); box-shadow:var(--shadow); }
+  .tile b { font-size:28px; font-weight:800; line-height:1.1; }
+  .tile span:last-child { color:var(--muted); font-size:12.5px; }
+  .tile-icon { font-size:20px; width:38px; height:38px; display:grid; place-items:center; border-radius:12px; margin-bottom:6px; }
+  .t-green .tile-icon { background:rgba(52,211,153,.14); } .t-blue .tile-icon { background:rgba(61,211,255,.14); }
+  .t-violet .tile-icon { background:rgba(139,123,255,.16); } .t-amber .tile-icon { background:rgba(251,191,36,.14); }
+  .t-green:before, .t-blue:before, .t-violet:before, .t-amber:before { content:""; position:absolute; inset:0 0 auto 0; height:3px; }
+  .t-green:before { background:var(--good); } .t-blue:before { background:var(--accent); } .t-violet:before { background:var(--accent2); } .t-amber:before { background:var(--warn); }
+
+  /* chat */
+  .chat { gap:12px; }
+  .bubble { border-radius:18px; padding:12px 16px; box-shadow:0 4px 14px rgba(0,0,0,.18); }
+  .bubble.me { background:var(--grad); color:#061022; border-bottom-right-radius:6px; }
+  .bubble.me b { color:#061022; }
+  .bubble.jv { background:var(--panel2); border:1px solid var(--line2); border-bottom-left-radius:6px; }
+  .composer { padding:12px 0; background:linear-gradient(180deg, rgba(7,11,22,0), var(--bg) 35%); }
+  .composer textarea { border-radius:16px; padding:12px 14px; }
+
+  .toast { border-radius:14px; box-shadow:var(--shadow); border-color:var(--line2); }
+  .pop { border-radius:14px; }
+  .reader-panel { box-shadow:0 20px 60px rgba(0,0,0,.5); border-radius:18px; }
+  .msg-card { border-radius:14px; }
+  .safe p { margin:6px 0; line-height:1.5; }
+  .cal .day { border-radius:12px; }
+
+  @media (max-width: 900px) { .tiles { grid-template-columns:repeat(2,1fr); } }
+  @media (max-width: 760px) {
+    nav.side { width:auto; flex:none; padding:6px 6px calc(6px + env(safe-area-inset-bottom)); background:rgba(10,16,30,.94); justify-content:space-between; }
+    nav.side button { flex-direction:column; gap:2px; padding:6px 8px; font-size:10.5px; min-width:58px; margin:0; border-radius:12px; }
+    nav.side button i { font-size:18px; width:auto; }
+    nav.side h1 { display:none; }
+    nav.side button em { flex:none; }
+    nav.side button.on { box-shadow:inset 0 -2px 0 var(--accent); }
+    nav.side .badge { position:absolute; margin:0; transform:translate(14px,-4px); font-size:10px; padding:0 5px; }
+    nav.side button { position:relative; }
+    .page { padding:16px 14px 96px; }
+    .top { padding:10px 14px; }
+    .hero { padding:18px; border-radius:18px; }
+    .hero h2 { font-size:22px; }
+    .hero-ask { flex-basis:100%; max-width:none; }
+    .tiles { gap:10px; }
+    .tile { padding:13px; }
+    .tile b { font-size:23px; }
+    .card { padding:15px; border-radius:14px; }
+    .composer { bottom:calc(64px + env(safe-area-inset-bottom)); }
+  }
 </style>
 </head>
 <body>
 <div class="shell">
   <nav class="side" id="nav">
-    <h1>COMMAND<span>.</span></h1>
-    <button data-p="home" class="on">Home</button>
-    <button data-p="jarvis">Jarvis</button>
-    <button data-p="alerts">Alerts <span class="badge hide" id="b-alerts"></span></button>
-    <button data-p="calendar">Calendar</button>
-    <button data-p="ask">Ask</button>
-    <button data-p="memory">Memory</button>
-    <button data-p="inbox">Inbox <span class="badge hide" id="b-unread"></span></button>
-    <button data-p="tasks">Tasks <span class="badge hide" id="b-tasks"></span></button>
-    <button data-p="settings">Settings</button>
+    <h1><span class="logo">J</span>JARVIS<span>.</span></h1>
+    <button data-p="home" class="on"><i>🏠</i><em>Home</em></button>
+    <button data-p="jarvis"><i>🤖</i><em>Jarvis</em></button>
+    <button data-p="inbox"><i>📬</i><em>Inbox</em> <span class="badge hide" id="b-unread"></span></button>
+    <button data-p="tasks"><i>✅</i><em>Tasks</em> <span class="badge hide" id="b-tasks"></span></button>
+    <button data-p="calendar"><i>📅</i><em>Calendar</em></button>
+    <button data-p="memory"><i>🧠</i><em>Memory</em></button>
+    <button data-p="ask"><i>🔎</i><em>Ask</em></button>
+    <button data-p="alerts"><i>🔔</i><em>Alerts</em> <span class="badge hide" id="b-alerts"></span></button>
+    <button data-p="settings"><i>⚙️</i><em>Settings</em></button>
   </nav>
   <main>
     <div class="top">
-      <input id="gsearch" placeholder="Search everything: notes, mail, tasks (Enter)">
+      <input id="gsearch" placeholder="🔍  Search notes, mail, tasks...">
       <button class="btn ghost" id="gsearch-go">Search</button>
       <button class="btn ghost bell" id="bell" title="Alerts">🔔<span class="badge hide" id="b-bell"></span></button>
     </div>
@@ -392,28 +502,47 @@ function showHome() {
   var p = page('Home', '');
   loading(p);
   call('getHome').then(function (h) {
-    p = page(h.greeting + ', Ritesh', h.date);
+    p = $('page'); p.textContent = '';
     setBadges(h.counts.unread, h.due.length);
-    p.appendChild(el('div', { cls: 'stat' }, [
-      el('div', {}, [el('b', { text: String(h.due.length) }), el('span', { text: 'tasks due' })]),
-      el('div', {}, [el('b', { text: String(h.counts.unread) }), el('span', { text: 'unread mails' })]),
-      el('div', {}, [el('b', { text: String(h.counts.notes) }), el('span', { text: 'things in memory' })]),
-      el('div', {}, [el('b', { text: String(h.suggested) }), el('span', { text: 'suggested tasks' })])
+    var askBox = el('input', { placeholder: 'Ask Jarvis anything, or say "remind me to..."' });
+    var askGo = function () {
+      var q = askBox.value.trim(); if (!q) return;
+      state.pendingAsk = q; go('jarvis');
+    };
+    askBox.addEventListener('keydown', function (e) { if (e.key === 'Enter') askGo(); });
+    p.appendChild(el('div', { cls: 'hero' }, [
+      el('div', { cls: 'hero-text' }, [
+        el('div', { cls: 'hero-kicker', text: h.date }),
+        el('h2', { text: h.greeting + ', Ritesh 👋' }),
+        el('p', { cls: 'sub', text: h.due.length ? 'You have ' + h.due.length + ' task' + (h.due.length === 1 ? '' : 's') + ' due and ' + h.important.length + ' important mail' + (h.important.length === 1 ? '' : 's') + '.' : 'Nothing due today. ' + (h.important.length ? h.important.length + ' important mail waiting.' : 'Inbox is calm.') })
+      ]),
+      el('div', { cls: 'hero-ask' }, [askBox, el('button', { cls: 'btn', text: 'Ask', onclick: askGo })])
+    ]));
+    var tile = function (icon, n, label, page, tone) {
+      return el('button', { cls: 'tile ' + tone, onclick: function () { go(page); } }, [
+        el('span', { cls: 'tile-icon', text: icon }), el('b', { text: String(n) }), el('span', { text: label })
+      ]);
+    };
+    p.appendChild(el('div', { cls: 'stat tiles' }, [
+      tile('✅', h.due.length, 'tasks due', 'tasks', 't-green'),
+      tile('📬', h.counts.unread, 'unread mails', 'inbox', 't-blue'),
+      tile('🧠', h.counts.notes, 'things in memory', 'memory', 't-violet'),
+      tile('💡', h.suggested, 'suggested tasks', 'tasks', 't-amber')
     ]));
     var quick = el('textarea', { placeholder: 'Quick note... e.g. Rahul bday 14 March #family' });
     if (h.suspicious) p.appendChild(el('div', { cls: 'card', style: 'border-color:var(--bad)' }, [el('b', { cls: 'over', text: '⚠ ' + h.suspicious + ' suspicious mail(s) flagged by the security shield.' }), el('p', { cls: 'muted', text: 'Open Inbox > Suspicious. Do not click their links or share any details.' })]));
     var gt = h.googleTasks.map(function (t) { return el('div', { cls: 'item' }, [el('div', { cls: 't', text: t.title }), el('div', { cls: 'm', text: 'Google Tasks · ' + t.list + (t.due ? ' · due ' + t.due : '') })]); });
     var grid = el('div', { cls: 'grid' }, [
-      card('Today\'s calendar', h.calendar.length ? h.calendar.map(function (e) { return el('div', { cls: 'item' }, [el('div', { cls: 't', text: e.title }), el('div', { cls: 'm', text: e.time + (e.where ? ' · ' + e.where : '') })]); }) : [el('p', { cls: 'muted', text: 'No events today.' })]),
-      card('Due today and overdue', (h.due.length || gt.length) ? h.due.map(function (t) { return taskItem(t, showHome); }).concat(gt) : [el('p', { cls: 'muted', text: 'Nothing due. Nice.' })]),
-      h.news.length ? card('Headlines', h.news.map(function (n) { return el('div', { cls: 'item' }, [el('a', { href: n.link, target: '_blank', text: n.title }), el('div', { cls: 'm', text: n.topic + (n.source ? ' · ' + n.source : '') })]); })) : null,
-      card('Important unread mail', h.important.length ? h.important.map(function (m) { return mailItem(m, {}, showHome); }) : [el('p', { cls: 'muted', text: 'No important unread mail.' })]),
-      card('Saved for today\'s date', h.onThisDay.length ? h.onThisDay.map(function (n) { return noteItem(n, [], showHome); }) : [el('p', { cls: 'muted', text: 'No birthdays or dates saved for today.' })]),
-      card('Quick note', [quick, el('div', { cls: 'acts' }, [el('button', { cls: 'btn', text: 'Save', onclick: function () {
+      card('📅 Today\'s calendar', h.calendar.length ? h.calendar.map(function (e) { return el('div', { cls: 'item' }, [el('div', { cls: 't', text: e.title }), el('div', { cls: 'm', text: e.time + (e.where ? ' · ' + e.where : '') })]); }) : [el('p', { cls: 'muted', text: 'No events today.' })]),
+      card('✅ Due today and overdue', (h.due.length || gt.length) ? h.due.map(function (t) { return taskItem(t, showHome); }).concat(gt) : [el('p', { cls: 'muted', text: 'Nothing due. Nice.' })]),
+      h.news.length ? card('📰 Headlines', h.news.map(function (n) { return el('div', { cls: 'item' }, [el('a', { href: n.link, target: '_blank', text: n.title }), el('div', { cls: 'm', text: n.topic + (n.source ? ' · ' + n.source : '') })]); })) : null,
+      card('⭐ Important unread mail', h.important.length ? h.important.map(function (m) { return mailItem(m, {}, showHome); }) : [el('p', { cls: 'muted', text: 'No important unread mail.' })]),
+      card('📌 Saved for today\'s date', h.onThisDay.length ? h.onThisDay.map(function (n) { return noteItem(n, [], showHome); }) : [el('p', { cls: 'muted', text: 'No birthdays or dates saved for today.' })]),
+      card('📝 Quick note', [quick, el('div', { cls: 'acts' }, [el('button', { cls: 'btn', text: 'Save', onclick: function () {
         if (!quick.value.trim()) return;
         call('saveNote', { text: quick.value }).then(function () { toast('Saved to memory.'); showHome(); });
       } })])]),
-      card('Recently saved', h.recent.length ? h.recent.map(function (n) { return noteItem(n, [], showHome); }) : [el('p', { cls: 'muted', text: 'Nothing saved yet.' })])
+      card('🧠 Recently saved', h.recent.length ? h.recent.map(function (n) { return noteItem(n, [], showHome); }) : [el('p', { cls: 'muted', text: 'Nothing saved yet.' })])
     ]);
     p.appendChild(grid);
   }).catch(function () { page('Home', 'Could not load. Did you run setup?'); });
@@ -489,6 +618,7 @@ function showJarvis() {
     });
   }
   loadChat(false);
+  if (state.pendingAsk) { var q0 = state.pendingAsk; state.pendingAsk = ''; setTimeout(function () { send(q0); }, 50); }
 }
 
 function iso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
@@ -925,6 +1055,20 @@ function showSettings() {
       el('button', { cls: 'btn ghost', text: 'Send one now', onclick: function () { call('sendBriefingNow').then(function () { toast('Briefing sent to your Alerts' + '.'); pollAlerts(true); }); } })])]));
 
     var dl = el('a', { href: s.sheetUrl, target: '_blank', text: 'Open the data sheet' });
+    var safe = el('div', { cls: 'safe' }, [el('p', { cls: 'muted', text: 'Checking backups...' })]);
+    var drawSafe = function (b) {
+      safe.textContent = '';
+      safe.appendChild(el('p', {}, ['🛡️ ', el('b', { text: 'Your memory is safe.' }),
+        ' It lives in your own Google Sheet, so website updates never delete it. Jarvis also copies it every day to a backup sheet (7 days kept).']));
+      safe.appendChild(el('p', { cls: 'muted', text: 'Saved now: ' + b.notes + ' notes · ' + b.facts + ' facts about you · ' + b.chat + ' chat messages. Last backup: ' + (b.last || 'not yet') + '.' }));
+      var acts = el('div', { cls: 'acts' }, [
+        el('button', { cls: 'btn', text: 'Back up now', onclick: function () { this.disabled = true; call('backupMemory').then(function (x) { toast('Backup done.'); drawSafe(x); }); } })
+      ]);
+      if (b.url) acts.appendChild(el('a', { cls: 'btn ghost', href: b.url, target: '_blank', text: 'Open backups' }));
+      safe.appendChild(acts);
+    };
+    call('getBackupInfo').then(drawSafe).catch(function () { safe.textContent = ''; });
+    p.appendChild(card('🛡️ Memory safety', [safe]));
     p.appendChild(card('Your data', [el('p', {}, [dl]), el('button', { cls: 'btn ghost', text: 'Download backup (JSON)', onclick: function () {
       call('exportData').then(function (txt) {
         var a = el('a', { href: URL.createObjectURL(new Blob([txt], { type: 'application/json' })), download: 'command-dashboard-backup.json' });
