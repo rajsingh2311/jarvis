@@ -109,7 +109,7 @@
   /* Fetch the main pages ahead, in one trip, so opening them is instant. */
   function prefetch() {
     var calls = [
-      { fn: 'getHome', args: [] }, { fn: 'listTasks', args: [] }, { fn: 'getChat', args: [] },
+      { fn: 'getHome', args: [] }, { fn: 'listTasks', args: [] }, { fn: 'getChat', args: [40] },
       { fn: 'getNotifications', args: [] }, { fn: 'listMail', args: [{ account: '', category: '', unread: false }] },
       { fn: 'listNotes', args: [{ tag: '' }] }
     ];

@@ -4,7 +4,7 @@
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Jarvis</title>
-<script src="api.js?v=202611132204"></script>
+<script src="api.js?v=202611141415"></script>
 <base target="_top">
 <meta charset="utf-8">
 <style>
@@ -112,6 +112,17 @@
   .pop.k-reminder { border-color:var(--warn); }
   .pop b { display:block; margin-bottom:4px; }
   .pop .acts { margin-top:8px; display:flex; gap:6px; }
+  .reader { position:fixed; inset:0; background:rgba(3,8,18,.72); z-index:40; display:flex; justify-content:center; align-items:flex-start; padding:24px 12px; overflow:auto; }
+  .reader-panel { background:var(--panel); border:1px solid var(--line); border-radius:14px; width:100%; max-width:820px; }
+  .reader-head { position:sticky; top:0; background:var(--panel); border-bottom:1px solid var(--line); border-radius:14px 14px 0 0; padding:12px 16px; display:flex; gap:10px; align-items:flex-start; justify-content:space-between; }
+  .reader-title { font-weight:700; font-size:16px; line-height:1.35; }
+  .reader-body { padding:14px 16px 18px; }
+  .msg-card { border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; background:var(--panel2); }
+  .msg-card.last { border-color:var(--accent); }
+  .msg-from { font-weight:600; }
+  .msg-text { white-space:pre-wrap; word-wrap:break-word; line-height:1.5; margin-top:8px; font-size:14px; }
+  @media (max-width: 760px) { .reader { padding:0; } .reader-panel { border-radius:0; min-height:100%; } .reader-head { border-radius:0; } }
+  .older { display:block; margin:0 auto 6px; }
   @media (max-width: 760px) {
     .pops { left:14px; right:14px; max-width:none; }
     .shell { display:block; }
@@ -292,9 +303,49 @@ function noteItem(n, words, onChange) {
   ]);
 }
 
+function openMail(m, onChange) {
+  var box = el('div', { cls: 'reader' });
+  var panel = el('div', { cls: 'reader-panel' });
+  var close = function () { if (box.parentNode) box.remove(); document.removeEventListener('keydown', esc); if (onChange) onChange(); };
+  var esc = function (e) { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', esc);
+  box.addEventListener('click', function (e) { if (e.target === box) close(); });
+  var head = el('div', { cls: 'reader-head' }, [
+    el('div', { cls: 'reader-title', text: m.subject }),
+    el('button', { cls: 'btn ghost small', text: '✕ Close', onclick: close })
+  ]);
+  var body = el('div', { cls: 'reader-body' }, [el('p', { cls: 'muted', text: 'Opening the full conversation...' })]);
+  panel.appendChild(head); panel.appendChild(body); box.appendChild(panel);
+  document.body.appendChild(box);
+  call('getMailThread', m.id).then(function (t) {
+    body.textContent = '';
+    body.appendChild(el('div', { cls: 'm', style: 'margin-bottom:10px' }, [t.account + ' · ' + t.category + ' · ' + t.messages.length + ' message' + (t.messages.length === 1 ? '' : 's') + ' in this conversation']));
+    if (t.flags) body.appendChild(el('div', { cls: 'm over', style: 'margin-bottom:10px', text: '⚠ Security shield: ' + t.flags + '. Do not click links or share details.' }));
+    t.messages.forEach(function (x, i) {
+      body.appendChild(el('div', { cls: 'msg-card' + (i === t.messages.length - 1 ? ' last' : '') }, [
+        el('div', { cls: 'msg-from', text: x.from }),
+        el('div', { cls: 'm', text: x.date + (x.to ? ' · to ' + x.to : '') }),
+        el('div', { cls: 'msg-text', text: x.body || '(no text)' })
+      ]));
+    });
+    body.appendChild(el('div', { cls: 'acts', style: 'margin-top:12px' }, [
+      el('button', { cls: 'btn small', text: 'Open in Gmail', onclick: function () { window.open(t.link, '_blank'); } }),
+      el('button', { cls: 'btn ghost small', text: 'Draft reply (AI)', onclick: function () {
+        var ins = prompt('What should the reply say? (optional)', '');
+        if (ins === null) return;
+        toast('Jarvis is drafting...');
+        call('draftReplyById', m.id, ins).then(function (d) { alert('Saved in Gmail > Drafts (not sent):\n\n' + d); });
+      } })
+    ]));
+    var last = body.querySelector('.msg-card.last');
+    if (last && t.messages.length > 1) last.scrollIntoView({ block: 'start' });
+  }).catch(function () { body.textContent = 'Could not open this mail. Try "Open in Gmail".'; });
+}
+
 function mailItem(m, colours, onChange) {
   var acts = el('div', { cls: 'acts' }, [
-    el('button', { cls: 'btn small', text: 'Open in Gmail', onclick: function () { window.open(m.link, '_blank'); call('setMailRead', m.id, true); } }),
+    el('button', { cls: 'btn small', text: '📖 Read', onclick: function () { openMail(m, onChange); } }),
+    el('button', { cls: 'btn ghost small', text: 'Open in Gmail', onclick: function () { window.open(m.link, '_blank'); call('setMailRead', m.id, true); } }),
     el('button', { cls: 'btn ghost small', text: m.read ? 'Mark unread' : 'Mark read', onclick: function () { call('setMailRead', m.id, !m.read).then(onChange); } }),
     el('button', { cls: 'btn ghost small', text: 'Important', onclick: function () { call('markImportant', m.id, true).then(function () { toast('Learned: mail from this sender matters more.'); onChange(); }); } }),
     el('button', { cls: 'btn ghost small', text: 'Not important', onclick: function () { call('markImportant', m.id, false).then(function () { toast('Learned: this sender matters less.'); onChange(); }); } }),
@@ -421,11 +472,23 @@ function showJarvis() {
     mode.textContent = s.on && s.hasKey ? 'AI mode: ON (' + s.provider + ')' : 'AI mode: off (commands only, fully private)';
     mode.classList.toggle('on', s.on && s.hasKey);
   });
-  call('getChat').then(function (h) {
-    if (!h.length) bubble('Good to see you, Ritesh. Tell me what you need, for example "remind me to submit the audit report on Friday" or "good morning". Type "help" to see everything I can do.', 'jv');
-    h.forEach(function (m) { bubble(m.text, m.role === 'user' ? 'me' : 'jv'); });
-    input.focus();
-  });
+  var chatLimit = 40;
+  function loadChat(older) {
+    call('getChat', chatLimit).then(function (h) {
+      log.textContent = '';
+      if (h.length >= chatLimit) {
+        log.appendChild(el('button', { cls: 'btn ghost small older', text: '⬆ Show older messages', onclick: function () {
+          chatLimit += 200; this.textContent = 'Loading...'; loadChat(true);
+        } }));
+      } else if (h.length) {
+        log.appendChild(el('p', { cls: 'muted', style: 'text-align:center;font-size:12px', text: 'This is the start of your conversation with Jarvis (website and Telegram).' }));
+      }
+      if (!h.length) bubble('Good to see you, Ritesh. Tell me what you need, for example "remind me to submit the audit report on Friday" or "good morning". Type "help" to see everything I can do.', 'jv');
+      h.forEach(function (m) { bubble(m.text, m.role === 'user' ? 'me' : 'jv'); });
+      if (older) window.scrollTo(0, 0); else input.focus();
+    });
+  }
+  loadChat(false);
 }
 
 function iso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
